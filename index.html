@@ -446,8 +446,8 @@ function resetData() {
   location.reload();
 }
 
-async function loadFromStorage() {
-  // Load from localStorage first (fast, offline fallback)
+function loadFromStorage() {
+  // 1. Carica subito da localStorage (istantaneo)
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) sessions = JSON.parse(raw);
@@ -456,37 +456,34 @@ async function loadFromStorage() {
   loadGoals();
   render();
 
-  // Sync from Google Sheets (source of truth)
-  if (!syncEnabled) return;
+  // 2. Sincronizza da Google Sheets in background
   showSyncStatus('Sincronizzazione…', 'loading');
-  try {
-    const res = await fetch(SHEET_URL + '?action=getAll', {cache: 'no-store'});
-    const text = await res.text();
-    const data = JSON.parse(text);
-    if (Array.isArray(data) && data.length > 0) {
-      sessions = data.map(s => ({
-        ...s,
-        km:    parseKm(s.km),
-        fc:    parseInt(s.fc)      || null,
-        fcmax: parseInt(s.fcmax)   || null,
-        cad:   parseInt(s.cad)     || null,
-        elev:  parseInt(s.elev)    || null,
-        cal:   parseInt(s.cal)     || null,
-        pow:   parseInt(s.pow)     || null,
-      }));
-      saveLocal();
-      render();
-      showSyncStatus('Sincronizzato ✓ · ' + sessions.length + ' uscite', 'ok');
-    } else if (Array.isArray(data) && data.length === 0) {
-      // Sheet vuoto: carica tutti i dati locali su Sheet
-      await pushAllToSheet();
-      showSyncStatus('Dati caricati su Sheets ✓', 'ok');
-    } else {
-      showSyncStatus('Risposta non valida da Sheets', 'warn');
-    }
-  } catch(e) {
-    showSyncStatus('Offline — dati locali', 'warn');
-  }
+  fetch(SHEET_URL + '?action=getAll', {cache: 'no-store'})
+    .then(res => res.text())
+    .then(text => {
+      const data = JSON.parse(text);
+      if (Array.isArray(data) && data.length > 0) {
+        sessions = data.map(s => ({
+          ...s,
+          km:    parseKm(s.km),
+          fc:    parseInt(s.fc)    || null,
+          fcmax: parseInt(s.fcmax) || null,
+          cad:   parseInt(s.cad)   || null,
+          elev:  parseInt(s.elev)  || null,
+          cal:   parseInt(s.cal)   || null,
+          pow:   parseInt(s.pow)   || null,
+        }));
+        saveLocal();
+        render();
+        showSyncStatus('Sincronizzato ✓ · ' + sessions.length + ' uscite', 'ok');
+      } else if (Array.isArray(data) && data.length === 0) {
+        pushAllToSheet();
+        showSyncStatus('Dati caricati su Sheets ✓', 'ok');
+      } else {
+        showSyncStatus('Risposta non valida da Sheets', 'warn');
+      }
+    })
+    .catch(() => showSyncStatus('Offline — dati locali', 'warn'));
 }
 
 async function pushAllToSheet() {
@@ -762,15 +759,18 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2200);
 }
 
-async function addSession() {
+function addSession() {
   const title = document.getElementById('f-title').value.trim();
   const date = document.getElementById('f-date').value;
-  const km = parseFloat(document.getElementById('f-km').value);
+  const kmRaw = document.getElementById('f-km').value;
   const pace = document.getElementById('f-pace').value.trim();
-  if (!title || !date || !km || !pace) {
+  if (!title || !date || !kmRaw || !pace) {
     showToast('Compila: titolo, data, km e passo');
     return;
   }
+  const km = parseFloat(kmRaw.replace(',','.'));
+  if (!km) { showToast('Distanza non valida'); return; }
+
   const s = {
     id: 's' + Date.now(),
     title, date,
@@ -784,6 +784,8 @@ async function addSession() {
     pow:  parseInt(document.getElementById('f-pow').value)   || null,
     note: document.getElementById('f-note').value.trim()
   };
+
+  // 1. Salva subito in locale e aggiorna UI
   sessions.push(s);
   saveLocal();
   populateYearFilter();
@@ -795,11 +797,16 @@ async function addSession() {
   document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
   document.getElementById('f-type').value = 'lento';
   switchTab('grafici');
-  showToast('Salvato in locale…');
+  showToast('Allenamento salvato ✓');
+
+  // 2. Invia a Google Sheets in background (non blocca UI)
   showSyncStatus('Salvataggio su Sheets…', 'loading');
-  await saveSessionToSheet(s);
-  showSyncStatus('Salvato su Sheets ✓', 'ok');
-  showToast('Allenamento salvato su Sheets ✓');
+  fetch(SHEET_URL, {
+    method: 'POST',
+    body: JSON.stringify({action: 'add', session: s})
+  })
+  .then(() => showSyncStatus('Salvato su Sheets ✓', 'ok'))
+  .catch(() => showSyncStatus('Salvato solo in locale', 'warn'));
 }
 
 async function deleteSession(id) {
