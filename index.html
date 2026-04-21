@@ -1,0 +1,1191 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Running Log</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,400;0,500;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0e0f11;--surface:#16181c;--surface2:#1e2126;--border:#2a2d34;
+  --accent:#c8f55a;--accent2:#5af5a0;--text:#f0f2f0;--muted:#6b7280;
+  --red:#f55a5a;--blue:#5ab4f5;--purple:#c45af5;--amber:#f5c45a;
+  --font-display:'DM Mono',monospace;--font-body:'DM Sans',sans-serif;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--font-body)}
+body{padding:2rem 1.5rem}
+
+/* header */
+.header{margin-bottom:2rem}
+.header-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:0.25rem}
+.logo{font-family:var(--font-display);font-size:11px;font-weight:500;letter-spacing:0.2em;color:var(--accent);text-transform:uppercase}
+.date-label{font-size:11px;color:var(--muted);font-family:var(--font-display)}
+h1{font-family:var(--font-display);font-size:26px;font-weight:500;letter-spacing:-0.02em;color:var(--text);line-height:1}
+.subtitle{font-size:13px;color:var(--muted);margin-top:6px}
+
+/* tabs */
+.tabs{display:flex;gap:4px;margin-bottom:1.75rem;background:var(--surface);border-radius:10px;padding:4px;border:0.5px solid var(--border)}
+.tab{flex:1;padding:9px 8px;font-size:11px;font-family:var(--font-display);text-align:center;cursor:pointer;border-radius:7px;border:none;background:transparent;color:var(--muted);transition:all 0.15s;letter-spacing:0.07em;text-transform:uppercase}
+.tab.active{background:var(--surface2);color:var(--accent);border:0.5px solid var(--border)}
+.tab:hover:not(.active){color:var(--text)}
+
+/* panels */
+.panel{display:none;animation:fadeIn 0.2s ease}
+.panel.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+/* stats row */
+.stat-row{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:1.5rem}
+.stat{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:1rem}
+.stat-label{font-size:10px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px}
+.stat-val{font-size:22px;font-weight:500;font-family:var(--font-display);color:var(--text);line-height:1}
+.stat-val span{font-size:11px;color:var(--muted);font-family:var(--font-body);font-weight:400}
+
+/* pb row */
+.pb-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.5rem}
+.pb-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:0.85rem 1rem;position:relative;overflow:hidden}
+.pb-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent)}
+.pb-card.gara-card::before{background:var(--red)}
+.pb-label{font-size:10px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px}
+.pb-val{font-size:18px;font-weight:500;font-family:var(--font-display);color:var(--text)}
+.pb-sub{font-size:11px;color:var(--muted);margin-top:2px}
+
+/* chart cards */
+.chart-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:12px}
+.chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem}
+.chart-title{font-size:10px;font-family:var(--font-display);color:var(--muted);letter-spacing:0.1em;text-transform:uppercase}
+.chart-latest{font-size:12px;font-family:var(--font-display);color:var(--accent)}
+canvas{max-height:160px}
+
+/* log list */
+.log-list{display:flex;flex-direction:column;gap:8px}
+.log-item{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:0.85rem 1rem;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;transition:border-color 0.15s}
+.log-item:hover{border-color:#3d4249}
+.log-indicator{display:flex;flex-direction:column;align-items:center;gap:4px}
+.log-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.log-dot.gara{background:var(--red)}
+.log-dot.medio{background:var(--blue)}
+.log-dot.soglia{background:var(--amber)}
+.log-dot.qualita{background:var(--purple)}
+.log-content{}
+.log-title-row{display:flex;align-items:center;gap:8px;margin-bottom:3px;flex-wrap:wrap}
+.log-title{font-size:13px;font-weight:500;color:var(--text)}
+.log-meta{font-size:11px;color:var(--muted);line-height:1.5}
+.log-note{font-size:11px;color:var(--muted);font-style:italic;margin-top:3px;opacity:0.8}
+.log-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.log-pace{font-family:var(--font-display);font-size:14px;color:var(--accent);white-space:nowrap}
+.log-km{font-size:11px;color:var(--muted);font-family:var(--font-display)}
+.del-btn{background:none;border:none;color:var(--border);cursor:pointer;font-size:13px;padding:2px;line-height:1;transition:color 0.15s}
+.del-btn:hover{color:var(--red)}
+
+/* badges */
+.badge{font-size:10px;padding:2px 7px;border-radius:99px;font-family:var(--font-display);letter-spacing:0.04em;white-space:nowrap}
+.b-lento{background:#1a2a0a;color:var(--accent2)}
+.b-medio{background:#0a1a2a;color:var(--blue)}
+.b-soglia{background:#2a1a0a;color:var(--amber)}
+.b-gara{background:#2a0a0a;color:var(--red)}
+.b-qualita{background:#1a0a2a;color:var(--purple)}
+
+/* form */
+.form-section{margin-bottom:1.25rem}
+.form-section-label{font-size:10px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;padding-bottom:6px;border-bottom:0.5px solid var(--border)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.field{display:flex;flex-direction:column;gap:5px}
+.field.full{grid-column:1/-1}
+.field label{font-size:10px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.08em;text-transform:uppercase}
+.field input,.field select,.field textarea{
+  background:var(--surface2);border:0.5px solid var(--border);
+  border-radius:7px;padding:9px 11px;font-size:13px;color:var(--text);
+  font-family:var(--font-body);outline:none;transition:border-color 0.15s;
+  -webkit-appearance:none;appearance:none;width:100%
+}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(--accent)}
+.field select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center;padding-right:28px}
+.field select option{background:#1e2126}
+.field textarea{resize:vertical;min-height:64px}
+.btn-save{width:100%;margin-top:1rem;padding:13px;background:var(--accent);color:#0e0f11;font-family:var(--font-display);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;border:none;border-radius:8px;cursor:pointer;font-weight:500;transition:opacity 0.15s}
+.btn-save:hover{opacity:0.85}
+.btn-save:active{opacity:0.7;transform:scale(0.99)}
+
+/* toast */
+.toast{position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(60px);background:var(--accent);color:#0e0f11;padding:10px 20px;border-radius:99px;font-family:var(--font-display);font-size:11px;letter-spacing:0.08em;opacity:0;transition:all 0.3s;z-index:999;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+.empty{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:13px}
+.empty-icon{font-size:32px;margin-bottom:0.75rem;opacity:0.3}
+.section-sep{height:0.5px;background:var(--border);margin:1.25rem 0}
+
+/* filters */
+.filters{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.25rem}
+.filter-wrap{display:flex;flex-direction:column;gap:4px}
+.filter-label{font-size:10px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase}
+.filter-select{background:var(--surface2);border:0.5px solid var(--border);border-radius:7px;padding:8px 28px 8px 10px;font-size:12px;color:var(--text);font-family:var(--font-display);outline:none;transition:border-color 0.15s;-webkit-appearance:none;appearance:none;width:100%;cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 10px center}
+.filter-select:focus{border-color:var(--accent)}
+.filter-select option{background:#1e2126}
+.filter-active{border-color:var(--accent);color:var(--accent)}
+.filter-info{font-size:10px;color:var(--muted);font-family:var(--font-display);text-align:right;margin-bottom:0.75rem;min-height:14px}
+
+/* confronto */
+.confronto-selectors{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.25rem}
+.confronto-vs{display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.1em}
+.kpi-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.25rem}
+.kpi-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:0.85rem 1rem}
+.kpi-label{font-size:10px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:10px}
+.kpi-vals{display:flex;justify-content:space-between;align-items:flex-end;gap:6px}
+.kpi-year{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.kpi-year-label{font-size:10px;color:var(--muted);font-family:var(--font-display)}
+.kpi-year-val{font-size:17px;font-weight:500;font-family:var(--font-display);color:var(--text)}
+.kpi-year-val.better{color:var(--accent)}
+.kpi-year-val.worse{color:var(--red)}
+.kpi-delta{font-size:11px;font-family:var(--font-display);text-align:center;padding:2px 6px;border-radius:4px;white-space:nowrap}
+.kpi-delta.pos{background:#1a2a0a;color:var(--accent2)}
+.kpi-delta.neg{background:#2a0a0a;color:var(--red)}
+.kpi-delta.neu{background:var(--surface2);color:var(--muted)}
+.dist-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:12px}
+.dist-title{font-size:10px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1rem}
+.dist-row{margin-bottom:10px}
+.dist-type-label{display:flex;justify-content:space-between;font-size:11px;font-family:var(--font-display);color:var(--muted);margin-bottom:4px}
+.dist-bars{display:flex;flex-direction:column;gap:3px}
+.dist-bar-wrap{display:flex;align-items:center;gap:6px}
+.dist-bar-year{font-size:9px;color:var(--muted);font-family:var(--font-display);width:28px;text-align:right}
+.dist-bar{height:8px;border-radius:2px;transition:width 0.4s ease;min-width:2px}
+.dist-bar-pct{font-size:9px;color:var(--muted);font-family:var(--font-display);margin-left:2px}
+.confronto-empty{text-align:center;padding:2rem;color:var(--muted);font-size:13px}
+.conf-chart-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:1.25rem;margin-bottom:12px}
+.conf-chart-title{font-size:10px;font-family:var(--font-display);color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1rem}
+
+/* stesso periodo */
+.stesso-periodo-wrap{margin-bottom:1.25rem;background:var(--surface);border:0.5px solid var(--border);border-radius:8px;padding:0.75rem 1rem}
+.stesso-periodo-label{display:flex;align-items:center;gap:10px;cursor:pointer;font-size:12px;color:var(--text);font-family:var(--font-display);letter-spacing:0.04em}
+.stesso-periodo-label input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.stesso-periodo-info{font-size:10px;color:var(--accent);font-family:var(--font-display);margin-top:6px;min-height:14px;padding-left:26px}
+
+/* sync status */
+.sync-status{font-size:11px;font-family:var(--font-display);margin-top:6px;min-height:14px;letter-spacing:0.04em;transition:opacity 0.3s}
+.sync-status.ok{color:var(--accent)}
+.sync-status.warn{color:var(--amber)}
+.sync-status.loading{color:var(--muted)}
+.refresh-btn{background:none;border:0.5px solid var(--border);border-radius:6px;color:var(--muted);cursor:pointer;padding:5px 6px;display:flex;align-items:center;transition:all 0.15s}
+.refresh-btn:hover{color:var(--accent);border-color:var(--accent)}
+.refresh-btn.spinning svg{animation:spin 0.8s linear infinite}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+
+/* risultati */
+.ris-section-label{font-size:10px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;margin:1.5rem 0 0.75rem;padding-bottom:6px;border-bottom:0.5px solid var(--border)}
+.ris-row{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:0.75rem 1rem;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;margin-bottom:8px}
+.ris-dot{width:8px;height:8px;border-radius:50%;background:var(--red);flex-shrink:0}
+.ris-dot.test{background:var(--blue)}
+.ris-title{font-size:13px;font-weight:500;color:var(--text)}
+.ris-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.ris-pace{font-family:var(--font-display);font-size:14px;color:var(--accent);white-space:nowrap;text-align:right}
+.ris-km{font-size:11px;color:var(--muted);font-family:var(--font-display);text-align:right}
+.ris-add-goal-wrap{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:8px}
+.goal-row{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:0.75rem 1rem;margin-bottom:8px;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center}
+.goal-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);flex-shrink:0}
+.goal-upcoming{background:var(--accent);color:#0e0f11}
+.goal-title{font-size:13px;font-weight:500;color:var(--text)}
+.goal-meta{font-size:11px;color:var(--muted);margin-top:2px}
+.goal-target{font-family:var(--font-display);font-size:13px;color:var(--accent);white-space:nowrap;text-align:right}
+.goal-date{font-size:11px;color:var(--muted);font-family:var(--font-display);text-align:right}
+.ris-empty{font-size:12px;color:var(--muted);padding:0.5rem 0;font-style:italic}
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-top">
+    <div class="logo">Running Log</div>
+    <div style="display:flex;align-items:center;gap:10px">
+      <div class="date-label" id="today-label"></div>
+      <button class="refresh-btn" onclick="resetData()" title="Aggiorna dati da Google Sheets">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+  <h1>Il tuo tracker</h1>
+  <p class="subtitle">Traccia ogni uscita. Vedi i progressi.</p>
+  <div class="sync-status" id="sync-status"></div>
+</div>
+
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('grafici')">Grafici</button>
+  <button class="tab" onclick="switchTab('risultati')">Risultati</button>
+  <button class="tab" onclick="switchTab('confronto')">Confronto</button>
+  <button class="tab" onclick="switchTab('log')">Log</button>
+  <button class="tab" onclick="switchTab('aggiungi')">+</button>
+</div>
+
+<!-- GRAFICI -->
+<div id="tab-grafici" class="panel active">
+  <div class="filters">
+    <div class="filter-wrap">
+      <div class="filter-label">Anno</div>
+      <select class="filter-select" id="filter-year" onchange="applyFilters()">
+        <option value="">Tutti</option>
+      </select>
+    </div>
+    <div class="filter-wrap">
+      <div class="filter-label">Mese</div>
+      <select class="filter-select" id="filter-month" onchange="applyFilters()">
+        <option value="">Tutti</option>
+        <option value="01">Gennaio</option>
+        <option value="02">Febbraio</option>
+        <option value="03">Marzo</option>
+        <option value="04">Aprile</option>
+        <option value="05">Maggio</option>
+        <option value="06">Giugno</option>
+        <option value="07">Luglio</option>
+        <option value="08">Agosto</option>
+        <option value="09">Settembre</option>
+        <option value="10">Ottobre</option>
+        <option value="11">Novembre</option>
+        <option value="12">Dicembre</option>
+      </select>
+    </div>
+  </div>
+  <div class="filter-info" id="filter-info"></div>
+  <div class="stat-row">
+    <div class="stat"><div class="stat-label">Uscite totali</div><div class="stat-val" id="s-count">—</div></div>
+    <div class="stat"><div class="stat-label">Km totali</div><div class="stat-val" id="s-km">— <span>km</span></div></div>
+    <div class="stat"><div class="stat-label">Passo medio</div><div class="stat-val" id="s-pace">—</div></div>
+    <div class="stat"><div class="stat-label">FC media</div><div class="stat-val" id="s-fc">— <span>bpm</span></div></div>
+  </div>
+
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title">Passo medio /km</div>
+      <div class="chart-latest" id="latest-pace">—</div>
+    </div>
+    <canvas id="chartPace"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title">Km per uscita</div>
+      <div class="chart-latest" id="latest-km">—</div>
+    </div>
+    <canvas id="chartKm"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title">Frequenza cardiaca media</div>
+      <div class="chart-latest" id="latest-fc">—</div>
+    </div>
+    <canvas id="chartFC"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-header">
+      <div class="chart-title">Cadenza (spm)</div>
+      <div class="chart-latest" id="latest-cad">—</div>
+    </div>
+    <canvas id="chartCad"></canvas>
+  </div>
+</div>
+
+<!-- RISULTATI -->
+<div id="tab-risultati" class="panel">
+
+  <!-- PB -->
+  <div class="ris-section-label">Personal Best</div>
+  <div class="pb-row">
+    <div class="pb-card"><div class="pb-label">PB 5 km</div><div class="pb-val" id="ris-pb5">—</div><div class="pb-sub" id="ris-pb5-sub">—</div></div>
+    <div class="pb-card gara-card"><div class="pb-label">PB 10 km</div><div class="pb-val" id="ris-pb10">—</div><div class="pb-sub" id="ris-pb10-sub">—</div></div>
+  </div>
+  <div class="pb-row">
+    <div class="pb-card"><div class="pb-label">Miglior passo (lungo 10km+)</div><div class="pb-val" id="ris-pblungo">—</div><div class="pb-sub" id="ris-pblungo-sub">—</div></div>
+    <div class="pb-card"><div class="pb-label">Passo più veloce (qualsiasi)</div><div class="pb-val" id="ris-pbfast">—</div><div class="pb-sub" id="ris-pbfast-sub">—</div></div>
+  </div>
+
+  <!-- OBIETTIVI -->
+  <div class="ris-section-label">Obiettivi</div>
+  <div id="ris-goals-list"></div>
+  <div class="ris-add-goal-wrap">
+    <div class="form-grid" style="margin-bottom:8px">
+      <div class="field"><label>Gara / evento</label><input id="g-name" type="text" placeholder="Stramilano 10km"></div>
+      <div class="field"><label>Data</label><input id="g-date" type="date"></div>
+      <div class="field"><label>Distanza (km)</label><input id="g-km" type="number" step="0.1" placeholder="10"></div>
+      <div class="field"><label>Target (mm:ss/km)</label><input id="g-target" type="text" placeholder="5:45"></div>
+    </div>
+    <button class="btn-save" style="margin-top:0;padding:10px" onclick="addGoal()">+ Aggiungi obiettivo</button>
+  </div>
+
+  <!-- GARE -->
+  <div class="ris-section-label">Gare disputate</div>
+  <div id="ris-gare-list"></div>
+
+  <!-- TEST -->
+  <div class="ris-section-label">Test cronometrati</div>
+  <div id="ris-test-list"></div>
+
+</div>
+
+<!-- LOG -->
+<div id="tab-log" class="panel">
+  <div class="log-list" id="logList">
+    <div class="empty"><div class="empty-icon">🏃</div>Nessun allenamento registrato.</div>
+  </div>
+</div>
+
+<!-- CONFRONTO -->
+<div id="tab-confronto" class="panel">
+  <div class="confronto-selectors">
+    <div class="filter-wrap">
+      <div class="filter-label">Anno A</div>
+      <select class="filter-select" id="conf-year-a" onchange="renderConfronto()">
+        <option value="">—</option>
+      </select>
+    </div>
+    <div class="filter-wrap">
+      <div class="filter-label">Anno B</div>
+      <select class="filter-select" id="conf-year-b" onchange="renderConfronto()">
+        <option value="">—</option>
+      </select>
+    </div>
+  </div>
+  <div class="stesso-periodo-wrap">
+    <label class="stesso-periodo-label">
+      <input type="checkbox" id="stesso-periodo" onchange="renderConfronto()">
+      <span>Stesso periodo dell'anno (1 gen → oggi)</span>
+    </label>
+    <div class="stesso-periodo-info" id="stesso-periodo-info"></div>
+  </div>
+  <div id="confronto-content"><div class="confronto-empty">Seleziona due anni da confrontare.</div></div>
+</div>
+
+<!-- AGGIUNGI -->
+<div id="tab-aggiungi" class="panel">
+  <div class="form-section">
+    <div class="form-section-label">Info base</div>
+    <div class="form-grid">
+      <div class="field full"><label>Titolo</label><input id="f-title" type="text" placeholder="es. Corsa mattutina lenta"></div>
+      <div class="field"><label>Data</label><input id="f-date" type="date"></div>
+      <div class="field"><label>Tipo</label>
+        <select id="f-type">
+          <option value="lento">Lento / Z2</option>
+          <option value="medio">Medio</option>
+          <option value="soglia">Soglia / Qualità</option>
+          <option value="qualita">Ripetute</option>
+          <option value="gara">Gara</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-label">Dati allenamento</div>
+    <div class="form-grid">
+      <div class="field"><label>Distanza (km)</label><input id="f-km" type="number" step="0.01" placeholder="5.29"></div>
+      <div class="field"><label>Passo medio (mm:ss)</label><input id="f-pace" type="text" placeholder="7:34"></div>
+      <div class="field"><label>FC media (bpm)</label><input id="f-fc" type="number" placeholder="136"></div>
+      <div class="field"><label>FC max (bpm)</label><input id="f-fcmax" type="number" placeholder="143"></div>
+      <div class="field"><label>Cadenza (spm)</label><input id="f-cad" type="number" placeholder="177"></div>
+      <div class="field"><label>Dislivello (m)</label><input id="f-elev" type="number" placeholder="16"></div>
+      <div class="field"><label>Calorie (kcal)</label><input id="f-cal" type="number" placeholder="397"></div>
+      <div class="field"><label>Potenza media (W)</label><input id="f-pow" type="number" placeholder="146"></div>
+    </div>
+  </div>
+
+  <div class="form-section">
+    <div class="form-section-label">Note</div>
+    <div class="form-grid">
+      <div class="field full"><label>Come ti sei sentito?</label><textarea id="f-note" placeholder="Problemi fisici, condizioni, sensazioni..."></textarea></div>
+    </div>
+  </div>
+
+  <button class="btn-save" onclick="addSession()">Salva allenamento</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const STORAGE_KEY = 'running_sessions_v2';
+const SHEET_URL = 'https://script.google.com/macros/s/AKfycby-xpfesZW-BHzooxYs0un52hfhwkSvLlr0OyvkGd-kdEtM_nEM2fZNzeSoiAbFV25v/exec';
+let sessions = [];
+let syncEnabled = true;
+
+// today label
+const now = new Date();
+document.getElementById('today-label').textContent = now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
+document.getElementById('f-date').value = now.toISOString().slice(0,10);
+
+function showSyncStatus(msg, type) {
+  const el = document.getElementById('sync-status');
+  if (!el) return;
+  el.textContent = msg;
+  el.className = 'sync-status ' + (type||'');
+  if (type !== 'loading') setTimeout(() => { el.textContent = ''; el.className = 'sync-status'; }, 3000);
+}
+
+function parseKm(val) {
+  if (!val && val !== 0) return null;
+  const s = String(val).trim();
+  // Google Sheets time format: "H:MM:SS" or "HH:MM:SS" — convert hours+min+sec to km
+  // e.g. "12:06:00" means Sheets parsed 11.66 as time → recover original float
+  const timeParts = s.match(/^(\d+):(\d{2}):(\d{2})$/);
+  if (timeParts) {
+    const h = parseInt(timeParts[1]);
+    const m = parseInt(timeParts[2]);
+    const sec = parseInt(timeParts[3]);
+    // Convert back: total hours as decimal
+    return Math.round((h + m/60 + sec/3600) * 100) / 100;
+  }
+  // Normal float
+  const f = parseFloat(s.replace(',', '.'));
+  return isNaN(f) ? null : f;
+}
+
+function resetData() {
+  const btn = document.querySelector('.refresh-btn');
+  if (btn) btn.classList.add('spinning');
+  localStorage.clear();
+  location.reload();
+}
+
+async function loadFromStorage() {
+  // Load from localStorage first (fast, offline fallback)
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) sessions = JSON.parse(raw);
+  } catch(e) { sessions = []; }
+  if (sessions.length === 0) prefill();
+  loadGoals();
+  render();
+
+  // Sync from Google Sheets (source of truth)
+  if (!syncEnabled) return;
+  showSyncStatus('Sincronizzazione…', 'loading');
+  try {
+    const res = await fetch(SHEET_URL + '?action=getAll', {cache: 'no-store'});
+    const text = await res.text();
+    const data = JSON.parse(text);
+    if (Array.isArray(data) && data.length > 0) {
+      sessions = data.map(s => ({
+        ...s,
+        km:    parseKm(s.km),
+        fc:    parseInt(s.fc)      || null,
+        fcmax: parseInt(s.fcmax)   || null,
+        cad:   parseInt(s.cad)     || null,
+        elev:  parseInt(s.elev)    || null,
+        cal:   parseInt(s.cal)     || null,
+        pow:   parseInt(s.pow)     || null,
+      }));
+      saveLocal();
+      render();
+      showSyncStatus('Sincronizzato ✓ · ' + sessions.length + ' uscite', 'ok');
+    } else if (Array.isArray(data) && data.length === 0) {
+      // Sheet vuoto: carica tutti i dati locali su Sheet
+      await pushAllToSheet();
+      showSyncStatus('Dati caricati su Sheets ✓', 'ok');
+    } else {
+      showSyncStatus('Risposta non valida da Sheets', 'warn');
+    }
+  } catch(e) {
+    showSyncStatus('Offline — dati locali', 'warn');
+  }
+}
+
+async function pushAllToSheet() {
+  for (const s of sessions) {
+    try {
+      await fetch(SHEET_URL, {
+        method:'POST',
+        body: JSON.stringify({action:'add', session:s})
+      });
+    } catch(e) {}
+  }
+}
+
+function saveLocal() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions)); } catch(e) {}
+}
+
+async function saveToStorage() {
+  saveLocal();
+}
+
+async function saveSessionToSheet(s) {
+  if (!syncEnabled) return;
+  try {
+    await fetch(SHEET_URL, {
+      method: 'POST',
+      body: JSON.stringify({action:'add', session:s})
+    });
+  } catch(e) { showSyncStatus('Errore sync', 'warn'); }
+}
+
+async function deleteSessionFromSheet(id) {
+  if (!syncEnabled) return;
+  try {
+    await fetch(SHEET_URL, {
+      method: 'POST',
+      body: JSON.stringify({action:'delete', id})
+    });
+  } catch(e) {}
+}
+
+function prefill() {
+  sessions = [{"id":"strava_18136418003","title":"Corsa mattutina (lento)","date":"2026-04-16","type":"lento","km":5.3,"pace":"7:33","fc":null,"fcmax":null,"cad":null,"elev":null,"cal":417,"pow":null,"note":""},{"id":"strava_18078474486","title":"Relay Marathon Milano 2026","date":"2026-04-12","type":"gara","km":11.66,"pace":"6:09","fc":158,"fcmax":177,"cad":null,"elev":20,"cal":751,"pow":178,"note":""},{"id":"strava_18061264746","title":"Corsa mattutina (lento pre-gara)","date":"2026-04-11","type":"gara","km":3.83,"pace":"7:47","fc":136,"fcmax":152,"cad":null,"elev":9,"cal":210,"pow":140,"note":""},{"id":"strava_18008808961","title":"Corsa mattutina (rip 3x6')","date":"2026-04-07","type":"qualita","km":5.91,"pace":"6:52","fc":144,"fcmax":160,"cad":null,"elev":22,"cal":374,"pow":159,"note":""},{"id":"strava_17983530445","title":"Corsa mattutina (lento)","date":"2026-04-05","type":"lento","km":8.02,"pace":"7:34","fc":137,"fcmax":151,"cad":null,"elev":28,"cal":520,"pow":146,"note":""},{"id":"strava_17946153870","title":"Corsa mattutina (lento)","date":"2026-04-02","type":"lento","km":5.14,"pace":"8:10","fc":148,"fcmax":157,"cad":null,"elev":16,"cal":264,"pow":136,"note":""},{"id":"strava_17921172669","title":"Corsa mattutina (lento)","date":"2026-03-31","type":"lento","km":5.12,"pace":"7:34","fc":143,"fcmax":150,"cad":null,"elev":13,"cal":306,"pow":146,"note":""},{"id":"strava_17897311540","title":"Corsa mattutina (lento)","date":"2026-03-29","type":"lento","km":5.65,"pace":"7:23","fc":147,"fcmax":158,"cad":null,"elev":21,"cal":324,"pow":149,"note":""},{"id":"strava_17738966131","title":"Corsa mattutina (lento)","date":"2026-03-16","type":"lento","km":5.02,"pace":"7:35","fc":154,"fcmax":162,"cad":null,"elev":15,"cal":269,"pow":145,"note":""},{"id":"strava_17656640150","title":"Corsa mattutina (soglia)","date":"2026-03-09","type":"soglia","km":5.18,"pace":"6:37","fc":157,"fcmax":164,"cad":null,"elev":18,"cal":286,"pow":166,"note":""},{"id":"strava_17653503413","title":"Corsa mattutina (lento)","date":"2026-03-05","type":"lento","km":5.73,"pace":"7:56","fc":null,"fcmax":null,"cad":null,"elev":null,"cal":451,"pow":null,"note":""},{"id":"strava_17541901708","title":"Corsa pomeridiana (lento)","date":"2026-02-27","type":"lento","km":5.01,"pace":"7:25","fc":152,"fcmax":161,"cad":null,"elev":15,"cal":343,"pow":148,"note":""},{"id":"strava_17517322026","title":"Corsa dell'ora di pranzo (soglia)","date":"2026-02-25","type":"soglia","km":5.01,"pace":"6:15","fc":166,"fcmax":172,"cad":null,"elev":17,"cal":297,"pow":179,"note":""},{"id":"strava_17403238017","title":"Corsa mattutina (lento)","date":"2026-02-15","type":"lento","km":7.09,"pace":"7:05","fc":148,"fcmax":157,"cad":null,"elev":28,"cal":428,"pow":157,"note":""},{"id":"strava_17403237687","title":"Corsa mattutina (lento)","date":"2026-02-08","type":"lento","km":6.72,"pace":"7:24","fc":145,"fcmax":162,"cad":null,"elev":21,"cal":374,"pow":150,"note":""},{"id":"strava_17240755757","title":"Corsa pomeridiana (lento)","date":"2026-01-31","type":"lento","km":5.88,"pace":"7:35","fc":145,"fcmax":164,"cad":null,"elev":21,"cal":358,"pow":146,"note":""},{"id":"strava_17216293546","title":"Corsa dell'ora di pranzo","date":"2026-01-29","type":"lento","km":7.01,"pace":"7:22","fc":147,"fcmax":156,"cad":null,"elev":24,"cal":465,"pow":152,"note":""},{"id":"strava_17172217536","title":"Corsa mattutina (lento)","date":"2026-01-25","type":"lento","km":6.01,"pace":"7:23","fc":142,"fcmax":153,"cad":null,"elev":23,"cal":380,"pow":150,"note":""},{"id":"strava_17115907304","title":"Corsa dell'ora di pranzo (progressivo)","date":"2026-01-20","type":"medio","km":5.25,"pace":"7:02","fc":149,"fcmax":166,"cad":null,"elev":18,"cal":329,"pow":159,"note":""},{"id":"strava_17091794783","title":"Corsa dell'ora di pranzo (lento)","date":"2026-01-18","type":"lento","km":6.02,"pace":"7:31","fc":143,"fcmax":157,"cad":null,"elev":25,"cal":353,"pow":148,"note":""},{"id":"strava_17077019328","title":"Corsa mattutina (progressivo)","date":"2026-01-17","type":"medio","km":5.22,"pace":"6:48","fc":145,"fcmax":162,"cad":null,"elev":14,"cal":320,"pow":164,"note":""},{"id":"strava_17046281929","title":"Corsa dell'ora di pranzo (lento)","date":"2026-01-14","type":"lento","km":6.69,"pace":"7:23","fc":151,"fcmax":161,"cad":null,"elev":27,"cal":427,"pow":150,"note":""},{"id":"strava_16998785902","title":"Corsa dell'ora di pranzo (lento)","date":"2026-01-10","type":"lento","km":7.03,"pace":"7:25","fc":144,"fcmax":154,"cad":null,"elev":28,"cal":393,"pow":150,"note":""},{"id":"strava_16885341397","title":"Corsa pomeridiana (lento)","date":"2025-12-30","type":"lento","km":5.51,"pace":"7:02","fc":144,"fcmax":153,"cad":null,"elev":31,"cal":336,"pow":159,"note":""},{"id":"strava_16860841111","title":"Corsa mattutina (lento)","date":"2025-12-28","type":"lento","km":5.01,"pace":"7:10","fc":145,"fcmax":157,"cad":null,"elev":32,"cal":284,"pow":156,"note":""},{"id":"strava_16844441289","title":"Corsa mattutina (lento)","date":"2025-12-26","type":"lento","km":5.01,"pace":"7:18","fc":156,"fcmax":167,"cad":null,"elev":27,"cal":278,"pow":152,"note":""},{"id":"strava_16791974585","title":"Corsa mattutina (lento)","date":"2025-12-20","type":"lento","km":10.02,"pace":"7:20","fc":142,"fcmax":153,"cad":null,"elev":36,"cal":686,"pow":152,"note":""},{"id":"strava_16767083269","title":"Corsa dell'ora di pranzo (rigenerante)","date":"2025-12-17","type":"lento","km":5.01,"pace":"7:09","fc":147,"fcmax":154,"cad":null,"elev":15,"cal":313,"pow":155,"note":""},{"id":"strava_16730389971","title":"Corsa dell'ora di pranzo (lento progressivo 6-5-3km)","date":"2025-12-13","type":"medio","km":14.06,"pace":"7:01","fc":155,"fcmax":168,"cad":null,"elev":72,"cal":788,"pow":160,"note":""},{"id":"strava_16730389290","title":"Corsa dell'ora di pranzo","date":"2025-12-13","type":"lento","km":0.52,"pace":"7:25","fc":159,"fcmax":161,"cad":null,"elev":0,"cal":27,"pow":142,"note":""},{"id":"strava_16701156059","title":"Corsa mattutina (lento rigenerante)","date":"2025-12-10","type":"lento","km":5.02,"pace":"7:22","fc":141,"fcmax":148,"cad":null,"elev":17,"cal":327,"pow":150,"note":""},{"id":"strava_16693146510","title":"Corsa dell'ora di pranzo (corto vel.)","date":"2025-12-09","type":"soglia","km":5.0,"pace":"6:29","fc":156,"fcmax":171,"cad":null,"elev":15,"cal":314,"pow":170,"note":""},{"id":"strava_16673328779","title":"Corsa dell'ora di pranzo","date":"2025-12-07","type":"lento","km":0.49,"pace":"8:50","fc":150,"fcmax":177,"cad":null,"elev":88,"cal":26,"pow":10,"note":""},{"id":"strava_16673328535","title":"Corsa mattutina (test 5km)","date":"2025-12-07","type":"gara","km":5.03,"pace":"5:23","fc":169,"fcmax":178,"cad":null,"elev":14,"cal":297,"pow":203,"note":""},{"id":"strava_16673327627","title":"Corsa mattutina","date":"2025-12-07","type":"lento","km":1.12,"pace":"7:02","fc":154,"fcmax":171,"cad":null,"elev":0,"cal":67,"pow":154,"note":""},{"id":"strava_16638045692","title":"Corsa dell'ora di pranzo (rip. 6x400m)","date":"2025-12-03","type":"qualita","km":6.02,"pace":"6:44","fc":153,"fcmax":176,"cad":null,"elev":19,"cal":385,"pow":164,"note":""},{"id":"strava_16592254763","title":"Corsa pomeridiana (lungo)","date":"2025-11-28","type":"lento","km":12.04,"pace":"7:23","fc":151,"fcmax":163,"cad":null,"elev":47,"cal":737,"pow":156,"note":""},{"id":"strava_16569359575","title":"Corsa mattutina","date":"2025-11-26","type":"medio","km":6.11,"pace":"6:41","fc":150,"fcmax":174,"cad":null,"elev":14,"cal":381,"pow":165,"note":""},{"id":"strava_16534478888","title":"Corsa mattutina","date":"2025-11-22","type":"lento","km":10.86,"pace":"7:06","fc":147,"fcmax":161,"cad":null,"elev":35,"cal":732,"pow":157,"note":""},{"id":"strava_16508779944","title":"Corsa mattutina (rip. 4x3')","date":"2025-11-19","type":"qualita","km":5.03,"pace":"7:07","fc":146,"fcmax":161,"cad":null,"elev":15,"cal":326,"pow":161,"note":""},{"id":"strava_16471932880","title":"Corsa mattutina","date":"2025-11-16","type":"lento","km":10.03,"pace":"7:01","fc":150,"fcmax":166,"cad":null,"elev":23,"cal":592,"pow":164,"note":""},{"id":"strava_16458622266","title":"Corsa pomeridiana","date":"2025-11-14","type":"lento","km":6.41,"pace":"7:11","fc":142,"fcmax":155,"cad":null,"elev":20,"cal":435,"pow":161,"note":""},{"id":"strava_16422900131","title":"Corsa dell'ora di pranzo (ripetute 6x400)","date":"2025-11-11","type":"qualita","km":7.18,"pace":"6:59","fc":157,"fcmax":180,"cad":null,"elev":33,"cal":461,"pow":164,"note":""},{"id":"strava_16392678561","title":"Corsa dell'ora di pranzo (lento)","date":"2025-11-08","type":"lento","km":6.51,"pace":"7:29","fc":145,"fcmax":155,"cad":null,"elev":24,"cal":446,"pow":154,"note":""},{"id":"strava_16350119921","title":"Corsa mattutina (lento)","date":"2025-11-04","type":"lento","km":5.54,"pace":"7:22","fc":145,"fcmax":162,"cad":null,"elev":111,"cal":342,"pow":160,"note":""},{"id":"strava_16330669610","title":"Corsa dell'ora di pranzo (lento)","date":"2025-11-02","type":"lento","km":5.6,"pace":"7:12","fc":146,"fcmax":158,"cad":null,"elev":23,"cal":372,"pow":161,"note":""},{"id":"strava_16312613602","title":"Corsa pomeridiana (lento)","date":"2025-10-31","type":"lento","km":5.01,"pace":"7:17","fc":148,"fcmax":160,"cad":null,"elev":14,"cal":351,"pow":158,"note":""},{"id":"strava_16282533595","title":"Corsa pomeridiana (corsa rigenerante)","date":"2025-10-28","type":"lento","km":5.15,"pace":"7:39","fc":147,"fcmax":155,"cad":null,"elev":16,"cal":376,"pow":149,"note":""},{"id":"strava_16261320699","title":"Corsa dell'ora di pranzo (lento)","date":"2025-10-26","type":"lento","km":6.0,"pace":"7:33","fc":141,"fcmax":153,"cad":null,"elev":28,"cal":423,"pow":153,"note":""},{"id":"strava_16229151983","title":"Corsa mattutina (ripetute 4x4')","date":"2025-10-23","type":"qualita","km":6.03,"pace":"7:00","fc":154,"fcmax":165,"cad":null,"elev":22,"cal":363,"pow":164,"note":""},{"id":"strava_16207970114","title":"Corsa mattutina (3x80m allunghi)","date":"2025-10-21","type":"soglia","km":0.84,"pace":"6:03","fc":163,"fcmax":182,"cad":null,"elev":0,"cal":45,"pow":null,"note":""},{"id":"strava_16207969495","title":"Corsa mattutina (lento)","date":"2025-10-21","type":"lento","km":5.51,"pace":"7:01","fc":151,"fcmax":158,"cad":null,"elev":16,"cal":386,"pow":164,"note":""},{"id":"strava_16191099217","title":"Corsa pomeridiana","date":"2025-10-19","type":"lento","km":8.58,"pace":"7:15","fc":149,"fcmax":159,"cad":null,"elev":41,"cal":621,"pow":160,"note":""},{"id":"strava_16134240070","title":"Corsa mattutina (lento)","date":"2025-10-14","type":"medio","km":5.02,"pace":"6:51","fc":151,"fcmax":159,"cad":null,"elev":15,"cal":336,"pow":168,"note":""},{"id":"strava_16113688630","title":"Corsa mattutina (lento)","date":"2025-10-12","type":"lento","km":8.02,"pace":"7:10","fc":149,"fcmax":161,"cad":null,"elev":41,"cal":577,"pow":169,"note":""},{"id":"strava_16082311730","title":"Corsa mattutina","date":"2025-10-09","type":"medio","km":6.01,"pace":"6:31","fc":158,"fcmax":170,"cad":null,"elev":15,"cal":425,"pow":184,"note":""},{"id":"strava_16037870947","title":"Corsa mattutina","date":"2025-10-05","type":"medio","km":7.01,"pace":"6:59","fc":151,"fcmax":164,"cad":null,"elev":27,"cal":479,"pow":171,"note":""},{"id":"strava_15983217435","title":"Corsa mattutina (Fartlek)","date":"2025-09-30","type":"qualita","km":5.01,"pace":"6:30","fc":154,"fcmax":168,"cad":null,"elev":12,"cal":315,"pow":184,"note":""},{"id":"strava_15917795783","title":"Corsa mattutina (test 5km)","date":"2025-09-24","type":"gara","km":5.02,"pace":"5:48","fc":171,"fcmax":184,"cad":null,"elev":12,"cal":332,"pow":203,"note":""},{"id":"strava_15861435115","title":"Corsa mattutina","date":"2025-09-19","type":"lento","km":5.01,"pace":"7:33","fc":140,"fcmax":150,"cad":null,"elev":7,"cal":356,"pow":156,"note":""},{"id":"strava_15792714008","title":"Corsa mattutina","date":"2025-09-13","type":"lento","km":7.13,"pace":"7:02","fc":155,"fcmax":173,"cad":null,"elev":19,"cal":507,"pow":171,"note":""},{"id":"strava_15739099052","title":"Corsa mattutina","date":"2025-09-08","type":"lento","km":6.22,"pace":"7:02","fc":143,"fcmax":155,"cad":null,"elev":22,"cal":399,"pow":169,"note":""},{"id":"strava_15679529582","title":"Corsa mattutina","date":"2025-09-03","type":"medio","km":5.52,"pace":"6:43","fc":153,"fcmax":159,"cad":null,"elev":16,"cal":346,"pow":177,"note":""},{"id":"strava_15520799351","title":"Corsa mattutina","date":"2025-08-20","type":"lento","km":5.4,"pace":"7:03","fc":143,"fcmax":162,"cad":null,"elev":36,"cal":335,"pow":173,"note":""},{"id":"strava_15474855148","title":"Corsa mattutina","date":"2025-08-16","type":"medio","km":5.03,"pace":"6:44","fc":150,"fcmax":168,"cad":null,"elev":54,"cal":324,"pow":175,"note":""},{"id":"strava_15348452429","title":"Corsa mattutina","date":"2025-08-05","type":"medio","km":5.02,"pace":"6:52","fc":145,"fcmax":158,"cad":null,"elev":25,"cal":318,"pow":174,"note":""},{"id":"strava_15326646332","title":"Corsa mattutina","date":"2025-08-03","type":"lento","km":5.02,"pace":"7:12","fc":143,"fcmax":153,"cad":null,"elev":22,"cal":323,"pow":165,"note":""},{"id":"strava_15136092186","title":"Corsa serale","date":"2025-07-16","type":"gara","km":5.02,"pace":"5:57","fc":167,"fcmax":177,"cad":null,"elev":21,"cal":353,"pow":200,"note":""},{"id":"strava_15086549801","title":"Corsa mattutina (Cattolica)","date":"2025-07-12","type":"medio","km":7.02,"pace":"6:55","fc":148,"fcmax":155,"cad":null,"elev":22,"cal":489,"pow":172,"note":""},{"id":"strava_15042206836","title":"Corsa mattutina","date":"2025-07-08","type":"medio","km":6.03,"pace":"6:58","fc":146,"fcmax":166,"cad":null,"elev":22,"cal":380,"pow":171,"note":""},{"id":"strava_15042206634","title":"Corsa mattutina","date":"2025-07-04","type":"lento","km":5.02,"pace":"7:06","fc":142,"fcmax":156,"cad":null,"elev":16,"cal":337,"pow":168,"note":""},{"id":"strava_14876660452","title":"Corsa mattutina","date":"2025-06-22","type":"lento","km":6.02,"pace":"7:25","fc":135,"fcmax":145,"cad":null,"elev":21,"cal":401,"pow":159,"note":""},{"id":"strava_14813778591","title":"Corsa mattutina","date":"2025-06-16","type":"lento","km":6.04,"pace":"7:08","fc":143,"fcmax":149,"cad":null,"elev":23,"cal":422,"pow":166,"note":""},{"id":"strava_14779395357","title":"Corsa serale","date":"2025-06-12","type":"soglia","km":5.02,"pace":"6:23","fc":155,"fcmax":170,"cad":null,"elev":15,"cal":351,"pow":186,"note":""},{"id":"strava_14716277541","title":"Corsa serale","date":"2025-06-06","type":"soglia","km":5.07,"pace":"6:13","fc":160,"fcmax":168,"cad":null,"elev":15,"cal":359,"pow":187,"note":""},{"id":"strava_14679751101","title":"Corsa mattutina","date":"2025-06-03","type":"medio","km":3.32,"pace":"6:45","fc":155,"fcmax":162,"cad":null,"elev":13,"cal":245,"pow":177,"note":""},{"id":"strava_14653230783","title":"Corsa serale","date":"2025-05-30","type":"soglia","km":4.02,"pace":"6:20","fc":161,"fcmax":176,"cad":null,"elev":17,"cal":292,"pow":188,"note":""},{"id":"strava_14570266789","title":"Corsa pomeridiana","date":"2025-05-23","type":"medio","km":4.03,"pace":"6:44","fc":157,"fcmax":169,"cad":null,"elev":22,"cal":294,"pow":176,"note":""},{"id":"strava_14570266962","title":"Corsa mattutina","date":"2025-05-20","type":"medio","km":3.03,"pace":"6:46","fc":151,"fcmax":174,"cad":null,"elev":8,"cal":203,"pow":null,"note":""},{"id":"strava_14097058735","title":"Relay Milano Marathon 2025","date":"2025-04-06","type":"gara","km":10.02,"pace":"5:59","fc":173,"fcmax":182,"cad":null,"elev":34,"cal":732,"pow":198,"note":""},{"id":"strava_14012972555","title":"Corsa pomeridiana","date":"2025-03-28","type":"gara","km":5.04,"pace":"5:53","fc":174,"fcmax":189,"cad":null,"elev":17,"cal":360,"pow":202,"note":""},{"id":"strava_13895088635","title":"Corsa mattutina","date":"2025-03-16","type":"lento","km":6.01,"pace":"7:21","fc":143,"fcmax":160,"cad":null,"elev":56,"cal":404,"pow":163,"note":""},{"id":"strava_13868459959","title":"Corsa mattutina","date":"2025-03-13","type":"lento","km":8.05,"pace":"7:10","fc":151,"fcmax":158,"cad":null,"elev":30,"cal":596,"pow":167,"note":""},{"id":"strava_13842695613","title":"Corsa pomeridiana","date":"2025-03-10","type":"medio","km":5.04,"pace":"6:40","fc":158,"fcmax":169,"cad":null,"elev":32,"cal":376,"pow":178,"note":""},{"id":"strava_13830280296","title":"Corsa mattutina","date":"2025-03-09","type":"lento","km":6.04,"pace":"7:21","fc":149,"fcmax":157,"cad":null,"elev":45,"cal":471,"pow":164,"note":""},{"id":"strava_13793223525","title":"Corsa mattutina (3km lenti + 3km fartlek)","date":"2025-03-05","type":"qualita","km":6.03,"pace":"6:42","fc":157,"fcmax":176,"cad":null,"elev":44,"cal":422,"pow":178,"note":""},{"id":"strava_13767245486","title":"Corsa dell'ora di pranzo","date":"2025-03-02","type":"lento","km":7.05,"pace":"7:15","fc":156,"fcmax":166,"cad":null,"elev":40,"cal":540,"pow":166,"note":""},{"id":"strava_13739076343","title":"Corsa mattutina","date":"2025-02-27","type":"lento","km":7.03,"pace":"7:21","fc":153,"fcmax":162,"cad":null,"elev":50,"cal":531,"pow":163,"note":""},{"id":"strava_13692433830","title":"Test - Corsa mattutina","date":"2025-02-22","type":"soglia","km":5.04,"pace":"6:27","fc":159,"fcmax":174,"cad":null,"elev":26,"cal":351,"pow":185,"note":""},{"id":"strava_13633528158","title":"Corsa pomeridiana","date":"2025-02-15","type":"lento","km":5.05,"pace":"7:31","fc":152,"fcmax":165,"cad":null,"elev":26,"cal":393,"pow":160,"note":""},{"id":"strava_13588627679","title":"Corsa mattutina","date":"2025-02-10","type":"lento","km":5.03,"pace":"7:39","fc":147,"fcmax":158,"cad":null,"elev":32,"cal":377,"pow":157,"note":""},{"id":"strava_13564587726","title":"Corsa pomeridiana","date":"2025-02-07","type":"lento","km":5.05,"pace":"7:05","fc":160,"fcmax":176,"cad":null,"elev":31,"cal":299,"pow":169,"note":""},{"id":"strava_13536725873","title":"Corsa dell'ora di pranzo (secondo allenamento dopo infortunio)","date":"2025-02-04","type":"lento","km":4.53,"pace":"7:23","fc":158,"fcmax":172,"cad":null,"elev":24,"cal":293,"pow":161,"note":""},{"id":"strava_13512136798","title":"Corsa mattutina (primo allenamento dopo infortunio)","date":"2025-02-01","type":"lento","km":3.52,"pace":"7:37","fc":153,"fcmax":169,"cad":null,"elev":16,"cal":236,"pow":153,"note":""},{"id":"strava_10692495227","title":"Day 3 - training x Milano Marathon","date":"2024-02-04","type":"gara","km":5.01,"pace":"6:22","fc":167,"fcmax":null,"cad":null,"elev":28,"cal":325,"pow":null,"note":""},{"id":"strava_10667289123","title":"Day 2 - training x Milano Marathon","date":"2024-01-31","type":"gara","km":5.02,"pace":"6:30","fc":170,"fcmax":null,"cad":null,"elev":49,"cal":355,"pow":null,"note":""},{"id":"strava_10641432756","title":"Day 1 - training x Milano Marathon","date":"2024-01-27","type":"gara","km":6.08,"pace":"7:23","fc":159,"fcmax":null,"cad":null,"elev":25,"cal":444,"pow":null,"note":""},{"id":"strava_8899365029","title":"Corsa mattutina","date":"2023-04-16","type":"gara","km":5.03,"pace":"5:46","fc":166,"fcmax":null,"cad":null,"elev":20,"cal":359,"pow":null,"note":""},{"id":"strava_8864978802","title":"Corsa mattutina","date":"2023-04-10","type":"soglia","km":7.03,"pace":"6:05","fc":160,"fcmax":null,"cad":null,"elev":28,"cal":507,"pow":null,"note":""},{"id":"strava_8820896877","title":"Milano Marathon (zona di cambio)","date":"2023-04-02","type":"gara","km":0.94,"pace":"5:42","fc":170,"fcmax":null,"cad":null,"elev":2,"cal":66,"pow":null,"note":""},{"id":"strava_8820897397","title":"Milano Marathon","date":"2023-04-02","type":"gara","km":8.52,"pace":"5:55","fc":165,"fcmax":null,"cad":null,"elev":24,"cal":606,"pow":null,"note":""},{"id":"strava_8820896475","title":"Day 11 (corsetta pre-gara)","date":"2023-03-31","type":"gara","km":3.96,"pace":"6:39","fc":143,"fcmax":null,"cad":null,"elev":15,"cal":256,"pow":null,"note":""},{"id":"strava_8792810794","title":"Day 10 (ripetute)","date":"2023-03-28","type":"qualita","km":5.46,"pace":"6:40","fc":152,"fcmax":null,"cad":null,"elev":43,"cal":353,"pow":null,"note":""},{"id":"strava_8779538108","title":"Day 9 - training x Milano Marathon","date":"2023-03-26","type":"medio","km":10.03,"pace":"6:29","fc":154,"fcmax":null,"cad":null,"elev":31,"cal":673,"pow":null,"note":""},{"id":"strava_8747610876","title":"Test 5km x Milano Marathon","date":"2023-03-20","type":"gara","km":5.01,"pace":"5:49","fc":158,"fcmax":null,"cad":null,"elev":33,"cal":307,"pow":null,"note":""},{"id":"strava_8747610709","title":"Day 8 - training x Milano Marathon","date":"2023-03-17","type":"medio","km":8.52,"pace":"6:24","fc":159,"fcmax":null,"cad":null,"elev":38,"cal":622,"pow":null,"note":""},{"id":"strava_8714041662","title":"Day 7 - training x Milano Marathon","date":"2023-03-14","type":"medio","km":7.02,"pace":"6:22","fc":160,"fcmax":null,"cad":null,"elev":35,"cal":509,"pow":null,"note":""},{"id":"strava_8694950211","title":"Day 6 - training x Milano Marathon","date":"2023-03-11","type":"medio","km":7.02,"pace":"6:37","fc":161,"fcmax":null,"cad":null,"elev":33,"cal":490,"pow":null,"note":""},{"id":"strava_8663878351","title":"Day 5 - training x Milano Marathon","date":"2023-03-05","type":"medio","km":6.32,"pace":"6:32","fc":161,"fcmax":null,"cad":null,"elev":21,"cal":478,"pow":null,"note":""},{"id":"strava_8654483765","title":"Day 4 - training x Milano Marathon","date":"2023-03-03","type":"medio","km":5.02,"pace":"6:54","fc":161,"fcmax":null,"cad":null,"elev":17,"cal":389,"pow":null,"note":""},{"id":"strava_8631963134","title":"Test 5km x Milano Marathon","date":"2023-02-27","type":"gara","km":5.01,"pace":"6:30","fc":160,"fcmax":null,"cad":null,"elev":56,"cal":368,"pow":null,"note":""},{"id":"strava_8615128728","title":"Day 3 - training x Milano Marathon (parte 2)","date":"2023-02-24","type":"lento","km":2.85,"pace":"7:17","fc":161,"fcmax":null,"cad":null,"elev":120,"cal":203,"pow":null,"note":""},{"id":"strava_8615128867","title":"Day 3 - training x Milano Marathon (parte 1)","date":"2023-02-24","type":"lento","km":2.97,"pace":"7:17","fc":146,"fcmax":null,"cad":null,"elev":17,"cal":204,"pow":null,"note":""},{"id":"strava_8614649991","title":"Day 2 - training x Milano Marathon","date":"2023-02-20","type":"lento","km":6.22,"pace":"7:56","fc":141,"fcmax":null,"cad":null,"elev":36,"cal":427,"pow":null,"note":""},{"id":"strava_8614649563","title":"Day 1 - training x Milano Marathon","date":"2023-02-18","type":"lento","km":6.19,"pace":"8:02","fc":145,"fcmax":null,"cad":null,"elev":24,"cal":391,"pow":null,"note":""},{"id":"strava_7918978665","title":"Corsa mattutina","date":"2022-10-06","type":"soglia","km":4.68,"pace":"6:26","fc":165,"fcmax":null,"cad":null,"elev":6,"cal":273,"pow":null,"note":""},{"id":"strava_6038693997","title":"Corsa serale","date":"2021-09-29","type":"medio","km":4.22,"pace":"6:51","fc":152,"fcmax":null,"cad":null,"elev":16,"cal":301,"pow":null,"note":""},{"id":"strava_6029008775","title":"Corsa pomeridiana","date":"2021-09-27","type":"medio","km":7.15,"pace":"6:54","fc":158,"fcmax":null,"cad":null,"elev":19,"cal":506,"pow":null,"note":""},{"id":"strava_6018606627","title":"Corsa serale","date":"2021-09-21","type":"medio","km":4.15,"pace":"6:51","fc":160,"fcmax":null,"cad":null,"elev":15,"cal":318,"pow":null,"note":""},{"id":"strava_5978650615","title":"Corsa dell'ora di pranzo","date":"2021-09-18","type":"medio","km":6.09,"pace":"6:33","fc":167,"fcmax":null,"cad":null,"elev":18,"cal":418,"pow":null,"note":""},{"id":"strava_5916355265","title":"Corsa serale","date":"2021-09-06","type":"lento","km":5.0,"pace":"7:02","fc":152,"fcmax":null,"cad":null,"elev":16,"cal":348,"pow":null,"note":""},{"id":"strava_5902170962","title":"Corsa mattutina","date":"2021-09-04","type":"gara","km":5.01,"pace":"5:55","fc":160,"fcmax":null,"cad":null,"elev":16,"cal":301,"pow":null,"note":""},{"id":"strava_5883149156","title":"Corsa serale","date":"2021-08-31","type":"soglia","km":4.98,"pace":"6:16","fc":165,"fcmax":null,"cad":null,"elev":16,"cal":331,"pow":null,"note":""},{"id":"strava_5795606682","title":"Corsa mattutina","date":"2021-08-15","type":"soglia","km":3.03,"pace":"6:18","fc":157,"fcmax":null,"cad":null,"elev":17,"cal":208,"pow":null,"note":""},{"id":"strava_5771546349","title":"Corsa serale","date":"2021-08-10","type":"soglia","km":5.02,"pace":"6:25","fc":162,"fcmax":null,"cad":null,"elev":19,"cal":363,"pow":null,"note":""},{"id":"strava_5759098068","title":"Corsa mattutina","date":"2021-08-08","type":"medio","km":6.03,"pace":"6:44","fc":155,"fcmax":null,"cad":null,"elev":25,"cal":399,"pow":null,"note":""},{"id":"strava_5749025687","title":"Corsa serale","date":"2021-08-06","type":"gara","km":5.01,"pace":"5:58","fc":168,"fcmax":null,"cad":null,"elev":15,"cal":319,"pow":null,"note":""},{"id":"strava_5727274260","title":"Corsa serale","date":"2021-08-02","type":"medio","km":6.02,"pace":"6:44","fc":153,"fcmax":null,"cad":null,"elev":15,"cal":366,"pow":null,"note":""},{"id":"strava_5708118842","title":"Corsa serale","date":"2021-07-29","type":"gara","km":4.04,"pace":"5:58","fc":173,"fcmax":null,"cad":null,"elev":3,"cal":251,"pow":null,"note":""},{"id":"strava_5514676564","title":"Corsa serale","date":"2021-06-22","type":"medio","km":5.02,"pace":"6:42","fc":167,"fcmax":null,"cad":null,"elev":6,"cal":266,"pow":null,"note":""},{"id":"strava_5506726291","title":"Corsa serale","date":"2021-06-21","type":"medio","km":5.01,"pace":"6:48","fc":166,"fcmax":null,"cad":null,"elev":6,"cal":263,"pow":null,"note":""},{"id":"strava_5372524381","title":"Corsa dell'ora di pranzo","date":"2021-05-28","type":"lento","km":8.04,"pace":"7:10","fc":161,"fcmax":null,"cad":null,"elev":9,"cal":522,"pow":null,"note":""},{"id":"strava_5325673165","title":"Corsa serale","date":"2021-05-19","type":"lento","km":8.37,"pace":"7:08","fc":168,"fcmax":null,"cad":null,"elev":11,"cal":445,"pow":null,"note":""},{"id":"strava_5313582371","title":"Corsa serale","date":"2021-05-17","type":"lento","km":8.09,"pace":"7:23","fc":165,"fcmax":null,"cad":null,"elev":10,"cal":429,"pow":null,"note":""},{"id":"strava_5305358254","title":"Corsa mattutina","date":"2021-05-16","type":"lento","km":5.05,"pace":"7:03","fc":null,"fcmax":null,"cad":null,"elev":6,"cal":269,"pow":null,"note":""},{"id":"strava_5305358324","title":"Corsa pomeridiana","date":"2021-05-14","type":"lento","km":7.02,"pace":"7:02","fc":171,"fcmax":null,"cad":null,"elev":8,"cal":375,"pow":null,"note":""},{"id":"strava_5236694372","title":"Corsa serale","date":"2021-05-03","type":"soglia","km":5.02,"pace":"6:22","fc":167,"fcmax":null,"cad":null,"elev":0,"cal":265,"pow":null,"note":""},{"id":"strava_5218831012","title":"Corsa pomeridiana","date":"2021-04-30","type":"medio","km":10.04,"pace":"6:48","fc":170,"fcmax":null,"cad":null,"elev":9,"cal":597,"pow":null,"note":""},{"id":"strava_5208835795","title":"Corsa serale","date":"2021-04-28","type":"medio","km":1.01,"pace":"6:46","fc":171,"fcmax":null,"cad":null,"elev":0,"cal":58,"pow":null,"note":""},{"id":"strava_5208835889","title":"Corsa serale","date":"2021-04-28","type":"soglia","km":1.0,"pace":"6:25","fc":173,"fcmax":null,"cad":null,"elev":0,"cal":59,"pow":null,"note":""},{"id":"strava_5208835946","title":"Corsa serale","date":"2021-04-28","type":"medio","km":0.99,"pace":"6:35","fc":170,"fcmax":null,"cad":null,"elev":0,"cal":55,"pow":null,"note":""},{"id":"strava_5208836124","title":"Corsa serale","date":"2021-04-28","type":"soglia","km":1.0,"pace":"6:26","fc":174,"fcmax":null,"cad":null,"elev":0,"cal":54,"pow":null,"note":""},{"id":"strava_5208836118","title":"Corsa serale","date":"2021-04-28","type":"soglia","km":1.02,"pace":"6:26","fc":144,"fcmax":null,"cad":null,"elev":0,"cal":57,"pow":null,"note":""},{"id":"strava_5208836251","title":"Corsa serale","date":"2021-04-28","type":"gara","km":0.94,"pace":"5:45","fc":144,"fcmax":null,"cad":null,"elev":0,"cal":54,"pow":null,"note":""},{"id":"strava_5197052895","title":"Corsa serale","date":"2021-04-26","type":"lento","km":9.03,"pace":"7:21","fc":163,"fcmax":null,"cad":null,"elev":10,"cal":504,"pow":null,"note":""},{"id":"strava_5178552403","title":"Corsa pomeridiana","date":"2021-04-23","type":"lento","km":8.06,"pace":"7:24","fc":165,"fcmax":null,"cad":null,"elev":13,"cal":464,"pow":null,"note":""},{"id":"strava_5155639637","title":"Corsa serale","date":"2021-04-19","type":"lento","km":6.09,"pace":"7:33","fc":165,"fcmax":null,"cad":null,"elev":9,"cal":328,"pow":null,"note":""},{"id":"strava_5114879532","title":"Corsa serale","date":"2021-04-12","type":"lento","km":7.0,"pace":"7:31","fc":175,"fcmax":null,"cad":null,"elev":8,"cal":379,"pow":null,"note":""},{"id":"strava_5098101985","title":"Corsa pomeridiana","date":"2021-04-09","type":"lento","km":7.4,"pace":"8:55","fc":144,"fcmax":null,"cad":null,"elev":8,"cal":373,"pow":null,"note":""},{"id":"strava_5086118892","title":"Corsa serale","date":"2021-04-07","type":"medio","km":5.02,"pace":"6:34","fc":175,"fcmax":null,"cad":null,"elev":0,"cal":273,"pow":null,"note":""},{"id":"strava_5086119249","title":"Corsa pomeridiana","date":"2021-03-26","type":"lento","km":3.36,"pace":"11:24","fc":123,"fcmax":null,"cad":null,"elev":2,"cal":158,"pow":null,"note":""},{"id":"strava_5003637391","title":"Corsa serale","date":"2021-03-24","type":"lento","km":5.0,"pace":"7:37","fc":172,"fcmax":null,"cad":null,"elev":0,"cal":262,"pow":null,"note":""},{"id":"strava_5000811761","title":"Corsa serale","date":"2021-03-22","type":"lento","km":5.1,"pace":"7:09","fc":172,"fcmax":null,"cad":null,"elev":0,"cal":273,"pow":null,"note":""},{"id":"strava_4973691637","title":"Corsa pomeridiana","date":"2021-03-19","type":"lento","km":6.48,"pace":"7:41","fc":156,"fcmax":null,"cad":null,"elev":0,"cal":322,"pow":null,"note":""},{"id":"strava_4963414588","title":"Corsa serale","date":"2021-03-17","type":"lento","km":2.45,"pace":"7:45","fc":170,"fcmax":null,"cad":null,"elev":0,"cal":128,"pow":null,"note":""},{"id":"strava_4963414642","title":"Corsa serale","date":"2021-03-17","type":"lento","km":0.28,"pace":"10:18","fc":137,"fcmax":null,"cad":null,"elev":0,"cal":10,"pow":null,"note":""},{"id":"strava_4963407362","title":"Corsa serale","date":"2021-03-17","type":"lento","km":1.81,"pace":"7:19","fc":174,"fcmax":null,"cad":null,"elev":0,"cal":141,"pow":null,"note":""},{"id":"strava_4963415193","title":"Corsa serale","date":"2021-03-15","type":"lento","km":5.03,"pace":"7:50","fc":137,"fcmax":null,"cad":null,"elev":0,"cal":260,"pow":null,"note":""}];
+  saveToStorage();
+}
+
+function paceToMin(p) {
+  if (!p) return null;
+  const parts = p.split(':');
+  if (parts.length !== 2) return null;
+  return parseInt(parts[0]) + parseInt(parts[1]) / 60;
+}
+
+function minToPace(m) {
+  if (!m) return '—';
+  const min = Math.floor(m);
+  const sec = Math.round((m - min) * 60);
+  return `${min}:${sec.toString().padStart(2,'0')}`;
+}
+
+function typeLabel(t) {
+  return {lento:'Lento',medio:'Medio',soglia:'Soglia',gara:'Gara',qualita:'Ripetute'}[t] || t;
+}
+
+function badgeClass(t) {
+  return {lento:'b-lento',medio:'b-medio',soglia:'b-soglia',gara:'b-gara',qualita:'b-qualita'}[t] || 'b-lento';
+}
+
+function dotClass(t) {
+  return {gara:'gara',medio:'medio',soglia:'soglia',qualita:'qualita'}[t] || '';
+}
+
+let charts = {};
+let filteredSessions = [];
+
+function getYears() {
+  return [...new Set(sessions.map(s => s.date.slice(0,4)))].sort();
+}
+
+function populateYearFilter() {
+  const sel = document.getElementById('filter-year');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Tutti</option>';
+  getYears().forEach(y => {
+    const opt = document.createElement('option');
+    opt.value = y; opt.textContent = y;
+    if (y === current) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+function applyFilters() {
+  const year  = document.getElementById('filter-year').value;
+  const month = document.getElementById('filter-month').value;
+  const ySel  = document.getElementById('filter-year');
+  const mSel  = document.getElementById('filter-month');
+
+  filteredSessions = sessions.filter(s => {
+    const [y, m] = s.date.split('-');
+    return (!year || y === year) && (!month || m === month);
+  });
+
+  ySel.classList.toggle('filter-active', !!year);
+  mSel.classList.toggle('filter-active', !!month);
+
+  const total = filteredSessions.length;
+  const info = document.getElementById('filter-info');
+  if (!year && !month) info.textContent = '';
+  else info.textContent = `${total} uscita${total !== 1 ? '' : ''} trovata${total !== 1 ? '' : ''} (${total})`;
+
+  updateStats();
+  initCharts();
+}
+
+function buildChart(id, color, label, isTime, isCad) {
+  const ctx = document.getElementById(id);
+  if (!ctx) return;
+  if (charts[id]) charts[id].destroy();
+  const sorted = [...filteredSessions].sort((a,b) => a.date.localeCompare(b.date));
+  const labels = sorted.map(s => s.date.slice(5).replace('-','/'));
+  let data;
+  if (isTime) data = sorted.map(s => paceToMin(s.pace));
+  else if (isCad) data = sorted.map(s => s.cad || null);
+  else if (id === 'chartKm') data = sorted.map(s => s.km);
+  else data = sorted.map(s => s.fc || null);
+
+  const last = data.filter(Boolean).pop();
+  if (id === 'chartPace' && last) document.getElementById('latest-pace').textContent = minToPace(last)+'/km';
+  if (id === 'chartKm' && last) document.getElementById('latest-km').textContent = last.toFixed(2)+' km';
+  if (id === 'chartFC' && last) document.getElementById('latest-fc').textContent = Math.round(last)+' bpm';
+  if (id === 'chartCad' && last) document.getElementById('latest-cad').textContent = Math.round(last)+' spm';
+
+  charts[id] = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label, data,
+        borderColor: color,
+        backgroundColor: color + '18',
+        borderWidth: 2,
+        pointBackgroundColor: color,
+        pointBorderColor: '#0e0f11',
+        pointBorderWidth: 2,
+        pointRadius: 5,
+        pointHoverRadius: 7,
+        tension: 0.35,
+        fill: true,
+        spanGaps: true
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: {display: false},
+        tooltip: {
+          backgroundColor: '#1e2126',
+          borderColor: '#2a2d34',
+          borderWidth: 1,
+          titleColor: '#6b7280',
+          bodyColor: '#f0f2f0',
+          titleFont: {family:'DM Mono',size:10},
+          bodyFont: {family:'DM Mono',size:12},
+          callbacks: {
+            label: ctx => {
+              if (isTime) return ' ' + minToPace(ctx.parsed.y) + '/km';
+              if (id === 'chartKm') return ' ' + ctx.parsed.y.toFixed(2) + ' km';
+              if (isCad) return ' ' + Math.round(ctx.parsed.y) + ' spm';
+              return ' ' + Math.round(ctx.parsed.y) + ' bpm';
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: {color:'#6b7280', font:{family:'DM Mono',size:10}},
+          grid: {color:'#1e2126'}
+        },
+        y: {
+          reverse: isTime,
+          ticks: {
+            color: '#6b7280',
+            font: {family:'DM Mono',size:10},
+            callback: v => {
+              if (isTime) return minToPace(v);
+              if (id === 'chartKm') return v + 'km';
+              return Math.round(v);
+            }
+          },
+          grid: {color:'#1e2126'}
+        }
+      }
+    }
+  });
+}
+
+function initCharts() {
+  buildChart('chartPace', '#c8f55a', 'Passo', true, false);
+  buildChart('chartKm',   '#5ab4f5', 'Km',    false, false);
+  buildChart('chartFC',   '#f55a5a', 'FC',    false, false);
+  buildChart('chartCad',  '#c45af5', 'Cad',   false, true);
+}
+
+function updateStats() {
+  const src = filteredSessions;
+  const n = src.length;
+  const km = src.reduce((a,s) => a + (s.km || 0), 0);
+  const paces = src.map(s => paceToMin(s.pace)).filter(Boolean);
+  const avgPace = paces.length ? paces.reduce((a,b) => a+b) / paces.length : null;
+  const fcs = src.map(s => s.fc).filter(Boolean);
+  const avgFC = fcs.length ? Math.round(fcs.reduce((a,b) => a+b) / fcs.length) : null;
+  document.getElementById('s-count').textContent = n;
+  document.getElementById('s-km').innerHTML = km.toFixed(1) + ' <span>km</span>';
+  document.getElementById('s-pace').textContent = avgPace ? minToPace(avgPace) : '—';
+  document.getElementById('s-fc').innerHTML = (avgFC || '—') + ' <span>bpm</span>';
+}
+
+function renderLog() {
+  const el = document.getElementById('logList');
+  if (!sessions.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🏃</div>Nessun allenamento registrato.</div>';
+    return;
+  }
+  const sorted = [...sessions].sort((a,b) => b.date.localeCompare(a.date));
+  el.innerHTML = sorted.map(s => `
+    <div class="log-item">
+      <div class="log-indicator">
+        <div class="log-dot ${dotClass(s.type)}"></div>
+      </div>
+      <div class="log-content">
+        <div class="log-title-row">
+          <span class="log-title">${s.title}</span>
+          <span class="badge ${badgeClass(s.type)}">${typeLabel(s.type)}</span>
+        </div>
+        <div class="log-meta">${s.date} · ${s.km} km${s.fc ? ' · FC '+s.fc+' bpm' : ''}${s.cad ? ' · '+s.cad+' spm' : ''}</div>
+        ${s.note ? `<div class="log-note">${s.note.slice(0,80)}${s.note.length>80?'…':''}</div>` : ''}
+      </div>
+      <div class="log-right">
+        <div class="log-pace">${s.pace}/km</div>
+        <div class="log-km">${s.km} km</div>
+        <button class="del-btn" onclick="deleteSession('${s.id}')" title="Elimina">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function render() {
+  populateYearFilter();
+  populateConfrontoFilters();
+  filteredSessions = [...sessions];
+  updateStats();
+  renderLog();
+  initCharts();
+}
+
+function switchTab(t) {
+  const tabNames = ['grafici','risultati','confronto','log','aggiungi'];
+  document.querySelectorAll('.tab').forEach((el,i) => {
+    el.classList.toggle('active', tabNames[i] === t);
+  });
+  document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  if (t === 'grafici') setTimeout(applyFilters, 60);
+  if (t === 'confronto') setTimeout(renderConfronto, 60);
+  if (t === 'risultati') renderRisultati();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+async function addSession() {
+  const title = document.getElementById('f-title').value.trim();
+  const date = document.getElementById('f-date').value;
+  const km = parseFloat(document.getElementById('f-km').value);
+  const pace = document.getElementById('f-pace').value.trim();
+  if (!title || !date || !km || !pace) {
+    showToast('Compila: titolo, data, km e passo');
+    return;
+  }
+  const s = {
+    id: 's' + Date.now(),
+    title, date,
+    type: document.getElementById('f-type').value,
+    km, pace,
+    fc:   parseInt(document.getElementById('f-fc').value)   || null,
+    fcmax:parseInt(document.getElementById('f-fcmax').value) || null,
+    cad:  parseInt(document.getElementById('f-cad').value)   || null,
+    elev: parseInt(document.getElementById('f-elev').value)  || null,
+    cal:  parseInt(document.getElementById('f-cal').value)   || null,
+    pow:  parseInt(document.getElementById('f-pow').value)   || null,
+    note: document.getElementById('f-note').value.trim()
+  };
+  sessions.push(s);
+  saveLocal();
+  populateYearFilter();
+  filteredSessions = [...sessions];
+  updateStats();
+  renderLog();
+  initCharts();
+  ['f-title','f-km','f-pace','f-fc','f-fcmax','f-cad','f-elev','f-cal','f-pow','f-note'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('f-type').value = 'lento';
+  switchTab('grafici');
+  showToast('Salvato in locale…');
+  showSyncStatus('Salvataggio su Sheets…', 'loading');
+  await saveSessionToSheet(s);
+  showSyncStatus('Salvato su Sheets ✓', 'ok');
+  showToast('Allenamento salvato su Sheets ✓');
+}
+
+async function deleteSession(id) {
+  if (!confirm('Eliminare questo allenamento?')) return;
+  sessions = sessions.filter(s => s.id !== id);
+  saveLocal();
+  render();
+  showToast('Eliminato');
+  await deleteSessionFromSheet(id);
+}
+
+function populateConfrontoFilters() {
+  const years = getYears();
+  ['conf-year-a','conf-year-b'].forEach((id,i) => {
+    const sel = document.getElementById(id);
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">—</option>';
+    years.forEach(y => {
+      const opt = document.createElement('option');
+      opt.value = y; opt.textContent = y;
+      if (y === cur) opt.selected = true;
+      sel.appendChild(opt);
+    });
+    // default: latest year for B, second-latest for A
+    if (!cur && years.length >= 2) {
+      sel.value = i === 0 ? years[years.length-2] : years[years.length-1];
+    }
+  });
+}
+
+let confCharts = {};
+
+function getYearStats(year, cutoffMMDD) {
+  let s = sessions.filter(x => x.date && x.date.startsWith(year));
+  if (cutoffMMDD) {
+    s = s.filter(x => x.date.slice(5) <= cutoffMMDD);
+  }
+  if (!s.length) return null;
+  const km = s.reduce((a,x) => a+(x.km||0),0);
+  const paces = s.map(x=>paceToMin(x.pace)).filter(Boolean);
+  const avgPace = paces.length ? paces.reduce((a,b)=>a+b)/paces.length : null;
+  const fcs = s.map(x=>x.fc).filter(Boolean);
+  const avgFC = fcs.length ? Math.round(fcs.reduce((a,b)=>a+b)/fcs.length) : null;
+  // consistency: unique weeks active
+  const weeks = new Set(s.map(x => {
+    const d = new Date(x.date);
+    const jan1 = new Date(d.getFullYear(),0,1);
+    return Math.ceil(((d-jan1)/86400000 + jan1.getDay()+1)/7);
+  }));
+  // distribution
+  const types = {lento:0,medio:0,soglia:0,qualita:0,gara:0};
+  s.forEach(x => { if(types[x.type]!==undefined) types[x.type]++; });
+  const total = s.length;
+  const dist = {};
+  Object.keys(types).forEach(k => dist[k] = total ? Math.round(types[k]/total*100) : 0);
+  // monthly km for bar chart
+  const monthly = {};
+  s.forEach(x => {
+    const m = x.date.slice(5,7);
+    monthly[m] = (monthly[m]||0) + (x.km||0);
+  });
+  return { n: total, km: Math.round(km*10)/10, avgPace, avgFC, weeks: weeks.size, dist, monthly, sessions: s };
+}
+
+function renderConfronto() {
+  const ya = document.getElementById('conf-year-a').value;
+  const yb = document.getElementById('conf-year-b').value;
+  const stessoPeriodo = document.getElementById('stesso-periodo').checked;
+  const infoEl = document.getElementById('stesso-periodo-info');
+  const el = document.getElementById('confronto-content');
+
+  // Compute cutoff: today's MM-DD
+  const today = new Date();
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const dd = String(today.getDate()).padStart(2,'0');
+  const cutoffMMDD = `${mm}-${dd}`;
+  const cutoffLabel = today.toLocaleDateString('it-IT',{day:'numeric',month:'long'});
+
+  if (stessoPeriodo) {
+    infoEl.textContent = `Filtro attivo: 1 gen → ${cutoffLabel}`;
+  } else {
+    infoEl.textContent = '';
+  }
+
+  if (!ya || !yb || ya === yb) {
+    el.innerHTML = '<div class="confronto-empty">Seleziona due anni diversi.</div>';
+    return;
+  }
+
+  const cutoff = stessoPeriodo ? cutoffMMDD : null;
+  const sa = getYearStats(ya, cutoff);
+  const sb = getYearStats(yb, cutoff);
+  if (!sa || !sb) {
+    el.innerHTML = '<div class="confronto-empty">Dati insufficienti per uno degli anni selezionati.</div>';
+    return;
+  }
+
+  function delta(a, b, lowerBetter) {
+    if (a == null || b == null) return '<span class="kpi-delta neu">—</span>';
+    const diff = b - a;
+    const pct = Math.round(Math.abs(diff)/Math.abs(a)*100);
+    const better = lowerBetter ? diff < 0 : diff > 0;
+    const cls = diff === 0 ? 'neu' : (better ? 'pos' : 'neg');
+    const sign = diff > 0 ? '+' : '';
+    return `<span class="kpi-delta ${cls}">${sign}${pct}%</span>`;
+  }
+
+  function paceVal(pm) { return pm ? minToPace(pm)+'/km' : '—'; }
+  function betterClass(a,b,lowerBetter) {
+    if(a==null||b==null) return '';
+    if(lowerBetter) return b < a ? 'better' : (b > a ? 'worse' : '');
+    return b > a ? 'better' : (b < a ? 'worse' : '');
+  }
+
+  // KPI cards
+  const kpis = [
+    { label:'Uscite', va: sa.n, vb: sb.n, fa: sa.n, fb: sb.n, lowerBetter: false, fmt: v=>v },
+    { label:'Km totali', va: sa.km, vb: sb.km, fa: sa.km, fb: sb.km, lowerBetter: false, fmt: v=>v+'km' },
+    { label:'Passo medio', va: sa.avgPace, vb: sb.avgPace, fa: sa.avgPace, fb: sb.avgPace, lowerBetter: true, fmt: paceVal },
+    { label:'FC media', va: sa.avgFC, vb: sb.avgFC, fa: sa.avgFC, fb: sb.avgFC, lowerBetter: true, fmt: v=>v ? v+' bpm' : '—' },
+    { label:'Settimane attive', va: sa.weeks, vb: sb.weeks, fa: sa.weeks, fb: sb.weeks, lowerBetter: false, fmt: v=>v+' /52' },
+  ];
+
+  const kpiHTML = kpis.map(k => `
+    <div class="kpi-card">
+      <div class="kpi-label">${k.label}</div>
+      <div class="kpi-vals">
+        <div class="kpi-year">
+          <div class="kpi-year-label">${ya}</div>
+          <div class="kpi-year-val">${k.fmt(k.va)}</div>
+        </div>
+        ${delta(k.fa, k.fb, k.lowerBetter)}
+        <div class="kpi-year">
+          <div class="kpi-year-label">${yb}</div>
+          <div class="kpi-year-val ${betterClass(k.fa,k.fb,k.lowerBetter)}">${k.fmt(k.vb)}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+
+  // Distribution
+  const typeLabels = {lento:'Lento',medio:'Medio',soglia:'Soglia',qualita:'Ripetute',gara:'Gara'};
+  const typeColors = {lento:'#5af5a0',medio:'#5ab4f5',soglia:'#f5c45a',qualita:'#c45af5',gara:'#f55a5a'};
+  const distHTML = Object.keys(typeLabels).map(t => {
+    const pa = sa.dist[t]||0;
+    const pb = sb.dist[t]||0;
+    return `
+      <div class="dist-row">
+        <div class="dist-type-label"><span>${typeLabels[t]}</span></div>
+        <div class="dist-bars">
+          <div class="dist-bar-wrap">
+            <div class="dist-bar-year">${ya}</div>
+            <div class="dist-bar" style="width:${pa*2}px;max-width:160px;background:${typeColors[t]}88"></div>
+            <div class="dist-bar-pct">${pa}%</div>
+          </div>
+          <div class="dist-bar-wrap">
+            <div class="dist-bar-year">${yb}</div>
+            <div class="dist-bar" style="width:${pb*2}px;max-width:160px;background:${typeColors[t]}"></div>
+            <div class="dist-bar-pct">${pb}%</div>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="kpi-grid">${kpiHTML}</div>
+    <div class="dist-card">
+      <div class="dist-title">Distribuzione allenamenti</div>
+      ${distHTML}
+    </div>
+    <div class="conf-chart-card">
+      <div class="conf-chart-title">Km mensili — ${ya} vs ${yb}</div>
+      <canvas id="confChartKm" style="max-height:180px"></canvas>
+    </div>
+    <div class="conf-chart-card">
+      <div class="conf-chart-title">Passo medio mensile — ${ya} vs ${yb}</div>
+      <canvas id="confChartPace" style="max-height:180px"></canvas>
+    </div>
+  `;
+
+  // Build monthly data
+  const months = ['01','02','03','04','05','06','07','08','09','10','11','12'];
+  const mLabels = ['Gen','Feb','Mar','Apr','Mag','Giu','Lug','Ago','Set','Ott','Nov','Dic'];
+
+  // Monthly pace: avg per month
+  function monthlyPace(yr) {
+    return months.map(m => {
+      let ms = sessions.filter(x => x.date && x.date.startsWith(yr) && x.date.slice(5,7)===m);
+      if (cutoff) ms = ms.filter(x => x.date.slice(5) <= cutoff);
+      const paces = ms.map(x=>paceToMin(x.pace)).filter(Boolean);
+      return paces.length ? paces.reduce((a,b)=>a+b)/paces.length : null;
+    });
+  }
+  function monthlyKm(yr) {
+    return months.map(m => {
+      let ms = sessions.filter(x => x.date && x.date.startsWith(yr) && x.date.slice(5,7)===m);
+      if (cutoff) ms = ms.filter(x => x.date.slice(5) <= cutoff);
+      return ms.reduce((a,x)=>a+(x.km||0),0) || null;
+    });
+  }
+
+  // Destroy old charts
+  ['confChartKm','confChartPace'].forEach(id => { if(confCharts[id]) { confCharts[id].destroy(); delete confCharts[id]; }});
+
+  const commonOpts = (isTime) => ({
+    responsive:true, maintainAspectRatio:true,
+    plugins:{legend:{labels:{color:'#6b7280',font:{family:'DM Mono',size:10},boxWidth:10}},
+      tooltip:{backgroundColor:'#1e2126',borderColor:'#2a2d34',borderWidth:1,titleColor:'#6b7280',bodyColor:'#f0f2f0',
+        titleFont:{family:'DM Mono',size:10},bodyFont:{family:'DM Mono',size:12},
+        callbacks:{label:ctx=> isTime ? ' '+minToPace(ctx.parsed.y)+'/km' : ' '+ctx.parsed.y.toFixed(1)+' km'}}},
+    scales:{
+      x:{ticks:{color:'#6b7280',font:{family:'DM Mono',size:10}},grid:{color:'#1e2126'}},
+      y:{reverse:isTime,ticks:{color:'#6b7280',font:{family:'DM Mono',size:10},
+        callback:v=>isTime?minToPace(v):v+'km'},grid:{color:'#1e2126'}}
+    }
+  });
+
+  confCharts['confChartKm'] = new Chart(document.getElementById('confChartKm'),{
+    type:'bar',
+    data:{labels:mLabels,datasets:[
+      {label:ya,data:monthlyKm(ya),backgroundColor:'#c8f55a55',borderColor:'#c8f55a',borderWidth:1},
+      {label:yb,data:monthlyKm(yb),backgroundColor:'#5ab4f555',borderColor:'#5ab4f5',borderWidth:1}
+    ]},
+    options:{...commonOpts(false),plugins:{...commonOpts(false).plugins}}
+  });
+
+  confCharts['confChartPace'] = new Chart(document.getElementById('confChartPace'),{
+    type:'line',
+    data:{labels:mLabels,datasets:[
+      {label:ya,data:monthlyPace(ya),borderColor:'#c8f55a',backgroundColor:'#c8f55a18',borderWidth:2,
+       pointRadius:4,tension:0.3,spanGaps:true,fill:false},
+      {label:yb,data:monthlyPace(yb),borderColor:'#5ab4f5',backgroundColor:'#5ab4f518',borderWidth:2,
+       pointRadius:4,tension:0.3,spanGaps:true,fill:false}
+    ]},
+    options:{...commonOpts(true),plugins:{...commonOpts(true).plugins}}
+  });
+}
+
+// ===== RISULTATI =====
+const GOALS_KEY = 'running_goals_v1';
+let goals = [];
+
+function loadGoals() {
+  try { const r = localStorage.getItem(GOALS_KEY); if(r) goals = JSON.parse(r); } catch(e) { goals=[]; }
+  // Prepopulate with known goal
+  if (!goals.length) {
+    goals = [{id:'g1',name:'Stramilano 10km',date:'2026-05-03',km:10,target:'5:45',note:'Obiettivo PB'}];
+    saveGoals();
+  }
+}
+
+function saveGoals() {
+  try { localStorage.setItem(GOALS_KEY, JSON.stringify(goals)); } catch(e) {}
+}
+
+function addGoal() {
+  const name = document.getElementById('g-name').value.trim();
+  const date = document.getElementById('g-date').value;
+  const km = parseFloat(document.getElementById('g-km').value);
+  const target = document.getElementById('g-target').value.trim();
+  if (!name || !date) { showToast('Inserisci almeno nome e data'); return; }
+  goals.push({ id: 'g'+Date.now(), name, date, km: km||null, target: target||null });
+  saveGoals();
+  renderRisultati();
+  ['g-name','g-km','g-target'].forEach(id => document.getElementById(id).value='');
+  showToast('Obiettivo aggiunto');
+}
+
+function deleteGoal(id) {
+  goals = goals.filter(g => g.id !== id);
+  saveGoals();
+  renderRisultati();
+}
+
+function renderRisultati() {
+  const today = new Date().toISOString().slice(0,10);
+
+  // ---- PB computation from sessions ----
+  function bestPace(minKm, maxKm) {
+    const cands = sessions.filter(s => s.km && s.pace && s.km >= minKm && s.km <= maxKm);
+    if (!cands.length) return null;
+    return cands.reduce((best, s) => {
+      const p = paceToMin(s.pace);
+      const bp = paceToMin(best.pace);
+      return (p && bp && p < bp) ? s : best;
+    });
+  }
+
+  const pb5 = bestPace(4.8, 5.3);
+  const pb10 = bestPace(9.5, 10.5);
+  const pbLungo = bestPace(10, 99);
+  const pbFast = sessions.filter(s=>s.km&&s.pace&&s.km>=3).reduce((best,s)=>{
+    if(!best) return s;
+    return (paceToMin(s.pace)||99) < (paceToMin(best.pace)||99) ? s : best;
+  }, null);
+
+  function setPB(idVal, idSub, session, label) {
+    const el = document.getElementById(idVal);
+    const sub = document.getElementById(idSub);
+    if (!el) return;
+    if (session) {
+      el.textContent = session.pace+'/km';
+      sub.textContent = `${session.km}km · ${session.date}`;
+    } else {
+      el.textContent = '—'; sub.textContent = label||'';
+    }
+  }
+
+  setPB('ris-pb5','ris-pb5-sub', pb5, 'nessun dato');
+  setPB('ris-pb10','ris-pb10-sub', pb10, 'nessun dato');
+  setPB('ris-pblungo','ris-pblungo-sub', pbLungo, 'nessun dato');
+  setPB('ris-pbfast','ris-pbfast-sub', pbFast, 'nessun dato');
+
+  // ---- Obiettivi ----
+  const goalsEl = document.getElementById('ris-goals-list');
+  if (!goals.length) {
+    goalsEl.innerHTML = '<div class="ris-empty">Nessun obiettivo impostato.</div>';
+  } else {
+    const sorted = [...goals].sort((a,b)=>a.date.localeCompare(b.date));
+    goalsEl.innerHTML = sorted.map(g => {
+      const isPast = g.date < today;
+      const daysLeft = Math.ceil((new Date(g.date)-new Date())/86400000);
+      const sub = isPast ? `${g.date}${g.km?' · '+g.km+' km':''}` :
+        `${g.date}${g.km?' · '+g.km+' km':''} · tra ${daysLeft} giorni`;
+      return `
+        <div class="goal-row">
+          <div class="goal-dot ${isPast?'':'goal-upcoming'}"></div>
+          <div>
+            <div class="goal-title">${g.name}</div>
+            <div class="goal-meta">${sub}</div>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            ${g.target ? `<div class="goal-target">target ${g.target}/km</div>` : ''}
+            <button class="del-btn" onclick="deleteGoal('${g.id}')">✕</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  // ---- Gare ----
+  const gare = sessions.filter(s => s.type==='gara' && s.km && s.km >= 4)
+    .sort((a,b)=>b.date.localeCompare(a.date));
+  const gareEl = document.getElementById('ris-gare-list');
+  if (!gare.length) {
+    gareEl.innerHTML = '<div class="ris-empty">Nessuna gara registrata.</div>';
+  } else {
+    gareEl.innerHTML = gare.map(s => `
+      <div class="ris-row">
+        <div class="ris-dot"></div>
+        <div>
+          <div class="ris-title">${s.title}</div>
+          <div class="ris-meta">${s.date} · ${s.km} km${s.fc?' · FC '+s.fc+' bpm':''}</div>
+        </div>
+        <div>
+          <div class="ris-pace">${s.pace}/km</div>
+          <div class="ris-km">${s.km} km</div>
+        </div>
+      </div>`).join('');
+  }
+
+  // ---- Test cronometrati ----
+  const tests = sessions.filter(s =>
+    (s.title||'').toLowerCase().includes('test') ||
+    (s.title||'').toLowerCase().includes('5km') ||
+    (s.type==='gara' && s.km && s.km < 4)
+  ).sort((a,b)=>b.date.localeCompare(a.date));
+  const testEl = document.getElementById('ris-test-list');
+  if (!tests.length) {
+    testEl.innerHTML = '<div class="ris-empty">Nessun test registrato.</div>';
+  } else {
+    testEl.innerHTML = tests.map(s => `
+      <div class="ris-row">
+        <div class="ris-dot test"></div>
+        <div>
+          <div class="ris-title">${s.title}</div>
+          <div class="ris-meta">${s.date} · ${s.km} km${s.fc?' · FC '+s.fc+' bpm':''}</div>
+        </div>
+        <div>
+          <div class="ris-pace">${s.pace}/km</div>
+          <div class="ris-km">${s.km} km</div>
+        </div>
+      </div>`).join('');
+  }
+}
+
+loadFromStorage();
+</script>
+</body>
+</html>
