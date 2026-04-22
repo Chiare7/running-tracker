@@ -458,7 +458,10 @@ function loadFromStorage() {
 
   // 2. Sincronizza da Google Sheets in background
   showSyncStatus('Sincronizzazione…', 'loading');
-  fetch(SHEET_URL + '?action=getAll', {cache: 'no-store'})
+  fetch(SHEET_URL, {
+    method: 'POST',
+    body: JSON.stringify({action: 'getAll'})
+  })
     .then(res => res.text())
     .then(text => {
       const data = JSON.parse(text);
