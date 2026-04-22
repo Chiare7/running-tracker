@@ -458,10 +458,7 @@ function loadFromStorage() {
 
   // 2. Sincronizza da Google Sheets in background
   showSyncStatus('Sincronizzazione…', 'loading');
-  fetch(SHEET_URL, {
-    method: 'POST',
-    body: JSON.stringify({action: 'getAll'})
-  })
+  fetch(SHEET_URL + '?action=getAll', {cache: 'no-store'})
     .then(res => res.text())
     .then(text => {
       const data = JSON.parse(text);
@@ -802,14 +799,19 @@ function addSession() {
   switchTab('grafici');
   showToast('Allenamento salvato ✓');
 
-  // 2. Invia a Google Sheets in background (non blocca UI)
+  // 2. Invia a Google Sheets via GET (unico metodo che funziona cross-origin)
   showSyncStatus('Salvataggio su Sheets…', 'loading');
-  fetch(SHEET_URL, {
-    method: 'POST',
-    body: JSON.stringify({action: 'add', session: s})
-  })
-  .then(() => showSyncStatus('Salvato su Sheets ✓', 'ok'))
-  .catch(() => showSyncStatus('Salvato solo in locale', 'warn'));
+  const params = new URLSearchParams({
+    action: 'add',
+    id: s.id, title: s.title, date: s.date, type: s.type,
+    km: s.km, pace: s.pace,
+    fc: s.fc||'', fcmax: s.fcmax||'', cad: s.cad||'',
+    elev: s.elev||'', cal: s.cal||'', pow: s.pow||'',
+    note: s.note||''
+  });
+  fetch(SHEET_URL + '?' + params.toString(), {cache: 'no-store'})
+    .then(() => showSyncStatus('Salvato su Sheets ✓', 'ok'))
+    .catch(() => showSyncStatus('Salvato solo in locale', 'warn'));
 }
 
 async function deleteSession(id) {
