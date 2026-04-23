@@ -531,10 +531,15 @@ function prefill() {
 }
 
 function paceToMin(p) {
-  if (!p) return null;
-  const parts = p.split(':');
+  if (!p && p !== 0) return null;
+  const s = String(p).trim();
+  if (!s) return null;
+  const parts = s.split(':');
   if (parts.length !== 2) return null;
-  return parseInt(parts[0]) + parseInt(parts[1]) / 60;
+  const min = parseInt(parts[0]);
+  const sec = parseInt(parts[1]);
+  if (isNaN(min) || isNaN(sec)) return null;
+  return min + sec / 60;
 }
 
 function minToPace(m) {
