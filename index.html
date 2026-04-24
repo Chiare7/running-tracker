@@ -172,6 +172,36 @@ canvas{max-height:160px}
 .refresh-btn.spinning svg{animation:spin 0.8s linear infinite}
 @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
 
+/* forma */
+.forma-section-label{font-size:10px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;margin:1.5rem 0 0.75rem;padding-bottom:6px;border-bottom:0.5px solid var(--border)}
+.forma-index-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:1.25rem;display:flex;gap:1.25rem;align-items:center;margin-bottom:12px}
+.forma-index-ring{position:relative;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.forma-index-val{position:absolute;font-family:var(--font-display);font-size:22px;font-weight:500;color:var(--text)}
+.forma-index-detail{flex:1}
+.forma-index-label{font-size:13px;font-weight:500;color:var(--text);margin-bottom:0.75rem;line-height:1.4}
+.forma-kpi-grid{display:flex;flex-direction:column;gap:6px}
+.forma-kpi-row{display:flex;justify-content:space-between;align-items:center}
+.forma-kpi-name{font-size:11px;color:var(--muted);font-family:var(--font-display)}
+.forma-kpi-score{font-size:11px;font-family:var(--font-display);padding:2px 7px;border-radius:4px}
+.fks-good{background:#1a2a0a;color:var(--accent2)}
+.fks-ok{background:#2a1a0a;color:var(--amber)}
+.fks-bad{background:#2a0a0a;color:var(--red)}
+.alert-card{border-radius:10px;padding:0.75rem 1rem;margin-bottom:8px;font-size:12px;line-height:1.5;display:flex;gap:10px;align-items:flex-start}
+.alert-card.warn{background:#2a1a0a;border:0.5px solid var(--amber)}
+.alert-card.danger{background:#2a0a0a;border:0.5px solid var(--red)}
+.alert-card.good{background:#1a2a0a;border:0.5px solid var(--accent2)}
+.alert-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.alert-text{color:var(--text)}
+.alert-text strong{display:block;margin-bottom:2px;font-size:13px}
+.tipo-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:0.85rem 1rem;margin-bottom:8px}
+.tipo-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.tipo-name{font-size:12px;font-weight:500;font-family:var(--font-display)}
+.tipo-count{font-size:11px;color:var(--muted);font-family:var(--font-display)}
+.tipo-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.tipo-stat{display:flex;flex-direction:column;gap:2px}
+.tipo-stat-label{font-size:9px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.08em;text-transform:uppercase}
+.tipo-stat-val{font-size:13px;font-family:var(--font-display);color:var(--text)}
+
 /* risultati */
 .ris-section-label{font-size:10px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;margin:1.5rem 0 0.75rem;padding-bottom:6px;border-bottom:0.5px solid var(--border)}
 .ris-row{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:0.75rem 1rem;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;margin-bottom:8px}
@@ -215,6 +245,7 @@ canvas{max-height:160px}
 
 <div class="tabs">
   <button class="tab active" onclick="switchTab('grafici')">Grafici</button>
+  <button class="tab" onclick="switchTab('forma')">Forma</button>
   <button class="tab" onclick="switchTab('risultati')">Risultati</button>
   <button class="tab" onclick="switchTab('confronto')">Confronto</button>
   <button class="tab" onclick="switchTab('log')">Log</button>
@@ -285,6 +316,46 @@ canvas{max-height:160px}
     </div>
     <canvas id="chartCad"></canvas>
   </div>
+</div>
+
+<!-- FORMA -->
+<div id="tab-forma" class="panel">
+
+  <!-- ALERT -->
+  <div id="forma-alerts"></div>
+
+  <!-- INDICE DI FORMA -->
+  <div class="forma-section-label">Indice di forma</div>
+  <div class="forma-index-card">
+    <div class="forma-index-ring">
+      <svg viewBox="0 0 100 100" width="120" height="120">
+        <circle cx="50" cy="50" r="42" fill="none" stroke="var(--surface2)" stroke-width="10"/>
+        <circle id="forma-ring-circle" cx="50" cy="50" r="42" fill="none" stroke="var(--accent)" stroke-width="10"
+          stroke-linecap="round" stroke-dasharray="264" stroke-dashoffset="264"
+          transform="rotate(-90 50 50)" style="transition:stroke-dashoffset 1s ease"/>
+      </svg>
+      <div class="forma-index-val" id="forma-index-val">—</div>
+    </div>
+    <div class="forma-index-detail">
+      <div class="forma-index-label" id="forma-index-label">Calcolo in corso…</div>
+      <div class="forma-kpi-grid" id="forma-kpi-grid"></div>
+    </div>
+  </div>
+
+  <!-- GRAFICO FC / PASSO -->
+  <div class="forma-section-label">Efficienza aerobica — FC vs Passo</div>
+  <div class="chart-card" style="margin-bottom:12px">
+    <div class="chart-header">
+      <div class="chart-title">FC media su corse lente (7:00–7:40/km)</div>
+      <div class="chart-latest" id="forma-fc-latest">—</div>
+    </div>
+    <canvas id="chartFCPasso" style="max-height:160px"></canvas>
+  </div>
+
+  <!-- ANALISI PER TIPO -->
+  <div class="forma-section-label">Analisi per tipo · ultime 12 settimane</div>
+  <div id="forma-tipo-grid"></div>
+
 </div>
 
 <!-- RISULTATI -->
@@ -746,7 +817,7 @@ function render() {
 }
 
 function switchTab(t) {
-  const tabNames = ['grafici','risultati','confronto','log','aggiungi'];
+  const tabNames = ['grafici','forma','risultati','confronto','log','aggiungi'];
   document.querySelectorAll('.tab').forEach((el,i) => {
     el.classList.toggle('active', tabNames[i] === t);
   });
@@ -755,6 +826,7 @@ function switchTab(t) {
   if (t === 'grafici') setTimeout(applyFilters, 60);
   if (t === 'confronto') setTimeout(renderConfronto, 60);
   if (t === 'risultati') renderRisultati();
+  if (t === 'forma') setTimeout(renderForma, 60);
 }
 
 function showToast(msg) {
@@ -1200,6 +1272,217 @@ function renderRisultati() {
         </div>
       </div>`).join('');
   }
+}
+
+// ===== FORMA =====
+function renderForma() {
+  const today = new Date();
+  const w4ago = new Date(today); w4ago.setDate(today.getDate() - 28);
+  const w8ago = new Date(today); w8ago.setDate(today.getDate() - 56);
+  const w12ago = new Date(today); w12ago.setDate(today.getDate() - 84);
+  const w1ago = new Date(today); w1ago.setDate(today.getDate() - 7);
+  const toISO = d => d.toISOString().slice(0,10);
+
+  const recent4w = sessions.filter(s => s.date >= toISO(w4ago));
+  const prev4w   = sessions.filter(s => s.date >= toISO(w8ago) && s.date < toISO(w4ago));
+  const recent12w = sessions.filter(s => s.date >= toISO(w12ago));
+  const lastWeek = sessions.filter(s => s.date >= toISO(w1ago));
+
+  // --- ALERT ---
+  const alerts = [];
+
+  // 1. Regola del 10%: volume settimanale
+  const kmThis = lastWeek.reduce((a,s)=>a+(s.km||0),0);
+  const w2ago = new Date(today); w2ago.setDate(today.getDate()-14);
+  const prevWeek = sessions.filter(s => s.date >= toISO(w1ago) && s.date < toISO(w1ago));
+  const kmPrev = sessions.filter(s=>s.date>=toISO(w2ago)&&s.date<toISO(w1ago)).reduce((a,s)=>a+(s.km||0),0);
+  if (kmPrev > 0 && kmThis > kmPrev * 1.15) {
+    alerts.push({type:'warn', icon:'⚠️', title:'Volume in aumento rapido', text:`Questa settimana hai corso ${kmThis.toFixed(1)} km vs ${kmPrev.toFixed(1)} km della scorsa (+${Math.round((kmThis/kmPrev-1)*100)}%). Rischio di sovraccarico — regola del 10%.`});
+  }
+
+  // 2. Giorni senza correre
+  if (sessions.length > 0) {
+    const lastRun = sessions.map(s=>s.date).sort().pop();
+    const daysSince = Math.floor((today - new Date(lastRun)) / 86400000);
+    if (daysSince >= 7) {
+      alerts.push({type:'warn', icon:'😴', title:'Inattività prolungata', text:`Non corri da ${daysSince} giorni. Anche una corsa lenta di 20 minuti aiuta a mantenere gli adattamenti.`});
+    } else if (daysSince <= 1 && recent4w.length > 0) {
+      alerts.push({type:'good', icon:'🔥', title:'Ottima continuità', text:'Hai corso di recente — la consistenza è la chiave del miglioramento.'});
+    }
+  }
+
+  // 3. FC media in aumento (affaticamento)
+  const fcRecent = recent4w.map(s=>s.fc).filter(Boolean);
+  const fcPrev = prev4w.map(s=>s.fc).filter(Boolean);
+  const avgFcR = fcRecent.length ? fcRecent.reduce((a,b)=>a+b)/fcRecent.length : null;
+  const avgFcP = fcPrev.length ? fcPrev.reduce((a,b)=>a+b)/fcPrev.length : null;
+  if (avgFcR && avgFcP && avgFcR > avgFcP + 5) {
+    alerts.push({type:'danger', icon:'❤️', title:'FC media in aumento', text:`FC media ultime 4 settimane: ${Math.round(avgFcR)} bpm vs ${Math.round(avgFcP)} bpm del periodo precedente. Possibile affaticamento o sovrallenamento.`});
+  } else if (avgFcR && avgFcP && avgFcR < avgFcP - 3) {
+    alerts.push({type:'good', icon:'💚', title:'Efficienza aerobica in miglioramento', text:`FC media scesa di ${Math.round(avgFcP-avgFcR)} bpm rispetto al mese scorso — stai diventando più efficiente.`});
+  }
+
+  // 4. Gara imminente
+  const todayStr = toISO(today);
+  const upcomingGoal = goals.filter(g=>g.date>todayStr).sort((a,b)=>a.date.localeCompare(b.date))[0];
+  if (upcomingGoal) {
+    const daysLeft = Math.ceil((new Date(upcomingGoal.date)-today)/86400000);
+    if (daysLeft <= 14) {
+      alerts.push({type:'warn', icon:'🏁', title:`${upcomingGoal.name} tra ${daysLeft} giorni`, text:'Fase di taper: riduci il volume, mantieni un paio di stimoli brevi a ritmo gara. Niente uscite lunghe.'});
+    }
+  }
+
+  const alertsEl = document.getElementById('forma-alerts');
+  alertsEl.innerHTML = alerts.length ? alerts.map(a=>`
+    <div class="alert-card ${a.type}">
+      <div class="alert-icon">${a.icon}</div>
+      <div class="alert-text"><strong>${a.title}</strong>${a.text}</div>
+    </div>`).join('') : '';
+
+  // --- INDICE DI FORMA (0-100) ---
+  // Componenti: volume(25), consistenza(25), FC trend(25), qualità allenamenti(25)
+  let scoreVolume = 0, scoreConsistency = 0, scoreFc = 0, scoreQuality = 0;
+
+  // Volume: km ultimi 28gg vs media storica
+  const allWeeklyKm = [];
+  for (let i = 0; i < 52; i++) {
+    const wStart = new Date(today); wStart.setDate(today.getDate() - (i+1)*7);
+    const wEnd = new Date(today); wEnd.setDate(today.getDate() - i*7);
+    const wkm = sessions.filter(s=>s.date>=toISO(wStart)&&s.date<toISO(wEnd)).reduce((a,s)=>a+(s.km||0),0);
+    if (wkm > 0) allWeeklyKm.push(wkm);
+  }
+  const avgWeeklyKm = allWeeklyKm.length ? allWeeklyKm.reduce((a,b)=>a+b)/allWeeklyKm.length : 0;
+  const recentWeeklyKm = recent4w.reduce((a,s)=>a+(s.km||0),0)/4;
+  scoreVolume = avgWeeklyKm > 0 ? Math.min(25, Math.round(recentWeeklyKm/avgWeeklyKm*20)) : 10;
+
+  // Consistenza: settimane attive su 4
+  const activeWeeks = new Set(recent4w.map(s=>{
+    const d = new Date(s.date);
+    return Math.floor((today-d)/604800000);
+  })).size;
+  scoreConsistency = Math.round(activeWeeks/4*25);
+
+  // FC trend
+  if (avgFcR && avgFcP) {
+    if (avgFcR < avgFcP - 3) scoreFc = 25;
+    else if (avgFcR < avgFcP + 2) scoreFc = 18;
+    else if (avgFcR < avgFcP + 5) scoreFc = 10;
+    else scoreFc = 5;
+  } else { scoreFc = 12; }
+
+  // Qualità: % allenamenti non-lento su 12 settimane
+  const nonLento = recent12w.filter(s=>s.type!=='lento').length;
+  const pctQuality = recent12w.length ? nonLento/recent12w.length : 0;
+  scoreQuality = pctQuality >= 0.25 && pctQuality <= 0.45 ? 25 :
+                 pctQuality > 0 ? Math.round(pctQuality*50) : 5;
+
+  const total = Math.min(100, scoreVolume + scoreConsistency + scoreFc + scoreQuality);
+  const label = total >= 75 ? '🟢 Ottima forma' : total >= 50 ? '🟡 Forma discreta' : total >= 30 ? '🟠 Forma in costruzione' : '🔴 Riprendi gradualmente';
+
+  document.getElementById('forma-index-val').textContent = total;
+  document.getElementById('forma-index-label').textContent = label;
+
+  const circumference = 264;
+  const offset = circumference - (total / 100) * circumference;
+  const circle = document.getElementById('forma-ring-circle');
+  circle.style.strokeDashoffset = offset;
+  circle.style.stroke = total >= 75 ? 'var(--accent)' : total >= 50 ? 'var(--amber)' : 'var(--red)';
+
+  const kpiDef = [
+    {name:'Volume', score:scoreVolume, max:25},
+    {name:'Continuità', score:scoreConsistency, max:25},
+    {name:'FC trend', score:scoreFc, max:25},
+    {name:'Qualità mix', score:scoreQuality, max:25},
+  ];
+  document.getElementById('forma-kpi-grid').innerHTML = kpiDef.map(k=>{
+    const pct = k.score/k.max;
+    const cls = pct>=0.7?'fks-good':pct>=0.4?'fks-ok':'fks-bad';
+    return `<div class="forma-kpi-row">
+      <span class="forma-kpi-name">${k.name}</span>
+      <span class="forma-kpi-score ${cls}">${k.score}/${k.max}</span>
+    </div>`;
+  }).join('');
+
+  // --- GRAFICO FC/PASSO (efficienza aerobica) ---
+  // Solo corse lente (passo 7:00-7:40) per isolare l'adattamento
+  const lente = sessions
+    .filter(s=>s.fc && s.pace && paceToMin(s.pace)>=7.0 && paceToMin(s.pace)<=7.67)
+    .sort((a,b)=>a.date.localeCompare(b.date));
+
+  // Raggruppa per mese
+  const byMonth = {};
+  lente.forEach(s=>{
+    const m = s.date.slice(0,7);
+    if (!byMonth[m]) byMonth[m]={fcs:[],count:0};
+    byMonth[m].fcs.push(s.fc);
+    byMonth[m].count++;
+  });
+  const months = Object.keys(byMonth).sort();
+  const fcData = months.map(m=>Math.round(byMonth[m].fcs.reduce((a,b)=>a+b)/byMonth[m].fcs.length));
+
+  if (window._formaFcChart) { window._formaFcChart.destroy(); }
+  if (months.length > 1) {
+    const last = fcData[fcData.length-1];
+    document.getElementById('forma-fc-latest').textContent = last + ' bpm';
+    window._formaFcChart = new Chart(document.getElementById('chartFCPasso'), {
+      type: 'line',
+      data: {
+        labels: months.map(m=>m.slice(5)+'/'+m.slice(2,4)),
+        datasets:[{
+          label:'FC media (corse lente)',
+          data: fcData,
+          borderColor:'#f55a5a',
+          backgroundColor:'#f55a5a18',
+          borderWidth:2,
+          pointRadius:4,
+          tension:0.3,
+          fill:true,
+          spanGaps:true
+        }]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:true,
+        plugins:{legend:{display:false},tooltip:{
+          backgroundColor:'#1e2126',borderColor:'#2a2d34',borderWidth:1,
+          titleColor:'#6b7280',bodyColor:'#f0f2f0',
+          titleFont:{family:'DM Mono',size:10},bodyFont:{family:'DM Mono',size:12},
+          callbacks:{label:ctx=>' '+Math.round(ctx.parsed.y)+' bpm'}
+        }},
+        scales:{
+          x:{ticks:{color:'#6b7280',font:{family:'DM Mono',size:10}},grid:{color:'#1e2126'}},
+          y:{reverse:false,ticks:{color:'#6b7280',font:{family:'DM Mono',size:10},callback:v=>v+' bpm'},grid:{color:'#1e2126'}}
+        }
+      }
+    });
+  } else {
+    document.getElementById('forma-fc-latest').textContent = 'dati insufficienti';
+  }
+
+  // --- ANALISI PER TIPO (ultime 12 settimane) ---
+  const typeColors = {lento:'var(--accent2)',medio:'var(--blue)',soglia:'var(--amber)',qualita:'var(--purple)',gara:'var(--red)'};
+  const typeLabelsMap = {lento:'Lento / Z2',medio:'Medio',soglia:'Soglia',qualita:'Ripetute',gara:'Gara'};
+  const tipoGrid = document.getElementById('forma-tipo-grid');
+  const tipoHTML = Object.keys(typeLabelsMap).map(type=>{
+    const ts = recent12w.filter(s=>s.type===type);
+    if (!ts.length) return '';
+    const km = ts.reduce((a,s)=>a+(s.km||0),0);
+    const paces = ts.map(s=>paceToMin(s.pace)).filter(Boolean);
+    const avgPace = paces.length ? paces.reduce((a,b)=>a+b)/paces.length : null;
+    const fcs = ts.map(s=>s.fc).filter(Boolean);
+    const avgFc = fcs.length ? Math.round(fcs.reduce((a,b)=>a+b)/fcs.length) : null;
+    return `<div class="tipo-card">
+      <div class="tipo-header">
+        <span class="tipo-name" style="color:${typeColors[type]}">${typeLabelsMap[type]}</span>
+        <span class="tipo-count">${ts.length} uscite · ${km.toFixed(1)} km</span>
+      </div>
+      <div class="tipo-stats">
+        <div class="tipo-stat"><div class="tipo-stat-label">Passo medio</div><div class="tipo-stat-val">${avgPace?minToPace(avgPace):'—'}</div></div>
+        <div class="tipo-stat"><div class="tipo-stat-label">FC media</div><div class="tipo-stat-val">${avgFc?avgFc+' bpm':'—'}</div></div>
+        <div class="tipo-stat"><div class="tipo-stat-label">% del totale</div><div class="tipo-stat-val">${Math.round(ts.length/recent12w.length*100)}%</div></div>
+      </div>
+    </div>`;
+  }).join('');
+  tipoGrid.innerHTML = tipoHTML || '<div style="font-size:13px;color:var(--muted)">Nessun dato nelle ultime 12 settimane.</div>';
 }
 
 loadFromStorage();
