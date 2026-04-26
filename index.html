@@ -450,7 +450,7 @@ canvas{max-height:160px}
   <div class="form-section">
     <div class="form-section-label">Dati allenamento</div>
     <div class="form-grid">
-      <div class="field"><label>Distanza (km)</label><input id="f-km" type="number" step="0.01" placeholder="5.29"></div>
+      <div class="field"><label>Distanza (km)</label><input id="f-km" type="text" inputmode="decimal" placeholder="5,29"></div>
       <div class="field"><label>Passo medio (mm:ss)</label><input id="f-pace" type="text" placeholder="7:34"></div>
       <div class="field"><label>FC media (bpm)</label><input id="f-fc" type="number" placeholder="136"></div>
       <div class="field"><label>FC max (bpm)</label><input id="f-fcmax" type="number" placeholder="143"></div>
@@ -838,19 +838,27 @@ function showToast(msg) {
 
 function addSession() {
   const title = document.getElementById('f-title').value.trim();
-  const date = document.getElementById('f-date').value;
+  const dateRaw = document.getElementById('f-date').value; // yyyy-mm-dd
   const kmRaw = document.getElementById('f-km').value;
   const pace = document.getElementById('f-pace').value.trim();
-  if (!title || !date || !kmRaw || !pace) {
+  if (!title || !dateRaw || !kmRaw || !pace) {
     showToast('Compila: titolo, data, km e passo');
     return;
   }
   const km = parseFloat(kmRaw.replace(',','.'));
   if (!km) { showToast('Distanza non valida'); return; }
 
+  // Data nel formato dd/mm/yyyy per lo Sheet
+  const [y, m, d] = dateRaw.split('-');
+  const dateForSheet = `${d}/${m}/${y}`;
+
+  // Km con virgola per lo Sheet
+  const kmForSheet = km.toFixed(2).replace('.', ',');
+
   const s = {
     id: 's' + Date.now(),
-    title, date,
+    title,
+    date: dateRaw,      // yyyy-mm-dd usato internamente dall'app
     type: document.getElementById('f-type').value,
     km, pace,
     fc:   parseInt(document.getElementById('f-fc').value)   || null,
@@ -876,12 +884,12 @@ function addSession() {
   switchTab('grafici');
   showToast('Allenamento salvato ✓');
 
-  // 2. Invia a Google Sheets via GET (unico metodo che funziona cross-origin)
+  // 2. Invia a Google Sheets con data dd/mm/yyyy e km con virgola
   showSyncStatus('Salvataggio su Sheets…', 'loading');
   const params = new URLSearchParams({
     action: 'add',
-    id: s.id, title: s.title, date: s.date, type: s.type,
-    km: s.km, pace: s.pace,
+    id: s.id, title: s.title, date: dateForSheet, type: s.type,
+    km: kmForSheet, pace: s.pace,
     fc: s.fc||'', fcmax: s.fcmax||'', cad: s.cad||'',
     elev: s.elev||'', cal: s.cal||'', pow: s.pow||'',
     note: s.note||''
