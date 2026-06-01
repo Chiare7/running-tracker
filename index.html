@@ -221,9 +221,191 @@ canvas{max-height:160px}
 .goal-date{font-size:11px;color:var(--muted);font-family:var(--font-display);text-align:right}
 .ris-empty{font-size:12px;color:var(--muted);padding:0.5rem 0;font-style:italic}
 
+/* ===== APP SECTIONS ===== */
+.app-section{display:none}
+.app-section.active{display:block}
+
+/* home */
+.home-wrap{min-height:100vh;display:flex;flex-direction:column;justify-content:center;padding:1rem 0}
+.home-logo{font-family:var(--font-display);font-size:10px;letter-spacing:0.3em;color:var(--accent);text-transform:uppercase;margin-bottom:2.5rem}
+.home-title{font-family:var(--font-display);font-size:28px;font-weight:500;letter-spacing:-0.02em;line-height:1.1;margin-bottom:0.5rem}
+.home-subtitle{font-size:13px;color:var(--muted);margin-bottom:2.5rem}
+.home-date{font-size:11px;color:var(--muted);font-family:var(--font-display);margin-bottom:2.5rem}
+.section-cards{display:flex;flex-direction:column;gap:10px}
+.section-card{background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:1.25rem 1.5rem;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.section-card:hover{border-color:var(--accent);transform:translateY(-1px)}
+.section-card:active{transform:translateY(0)}
+.section-card-left{display:flex;align-items:center;gap:1rem}
+.section-icon{width:44px;height:44px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.si-health{background:#1a1a2e;border:0.5px solid #5ab4f566}
+.si-running{background:#1a2a0a;border:0.5px solid var(--accent)}
+.si-training{background:#2a0a1a;border:0.5px solid #c45af566}
+.section-card-title{font-size:15px;font-weight:500;font-family:var(--font-display);color:var(--text)}
+.section-card-desc{font-size:11px;color:var(--muted);margin-top:3px}
+.section-card-arrow{color:var(--muted);flex-shrink:0}
+.section-card:hover .section-card-arrow{color:var(--accent)}
+
+/* back button */
+.back-btn{display:flex;align-items:center;gap:6px;background:none;border:none;color:var(--muted);font-family:var(--font-display);font-size:11px;letter-spacing:0.08em;cursor:pointer;padding:0;margin-bottom:1.5rem;text-transform:uppercase;transition:color 0.15s}
+.back-btn:hover{color:var(--accent)}
+
+/* health */
+.health-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:1.25rem}
+.health-metric-card{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:0.85rem 1rem}
+.hm-label{font-size:9px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:6px}
+.hm-val{font-size:20px;font-weight:500;font-family:var(--font-display);color:var(--text);line-height:1}
+.hm-unit{font-size:11px;color:var(--muted);font-weight:400}
+.hm-delta{font-size:10px;margin-top:4px;font-family:var(--font-display)}
+.hm-delta.up{color:var(--accent2)}
+.hm-delta.down{color:var(--red)}
+.hm-delta.neu{color:var(--muted)}
+.health-section-label{font-size:10px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;margin:1.5rem 0 0.75rem;padding-bottom:6px;border-bottom:0.5px solid var(--border)}
+.health-log-row{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:0.85rem 1rem;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.hlr-date{font-size:12px;font-family:var(--font-display);color:var(--text)}
+.hlr-vals{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end}
+.hlr-val{font-size:11px;font-family:var(--font-display);color:var(--muted);white-space:nowrap}
+.hlr-val span{color:var(--text)}
+.health-add-wrap{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1.25rem}
+.health-add-title{font-size:10px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:1rem}
+.health-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+
+/* training placeholder */
+.training-placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4rem 1rem;text-align:center}
+.training-placeholder-icon{font-size:48px;margin-bottom:1.5rem}
+.training-placeholder-title{font-family:var(--font-display);font-size:16px;font-weight:500;color:var(--text);margin-bottom:0.5rem}
+.training-placeholder-sub{font-size:13px;color:var(--muted);line-height:1.6}
 </style>
 </head>
 <body>
+
+<!-- HOME -->
+<div id="section-home" class="app-section active">
+  <div class="home-wrap">
+    <div class="home-logo">Tracker · 2026</div>
+    <div class="home-title">Ciao,<br>bentornato.</div>
+    <div class="home-subtitle">Cosa vuoi tracciare oggi?</div>
+    <div class="section-cards">
+      <div class="section-card" onclick="goSection('health')">
+        <div class="section-card-left">
+          <div class="section-icon si-health">❤️</div>
+          <div>
+            <div class="section-card-title">Health</div>
+            <div class="section-card-desc">Sonno, HRV, FC, peso, SpO2</div>
+          </div>
+        </div>
+        <div class="section-card-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+      <div class="section-card" onclick="goSection('running')">
+        <div class="section-card-left">
+          <div class="section-icon si-running">🏃</div>
+          <div>
+            <div class="section-card-title">Running</div>
+            <div class="section-card-desc">Allenamenti, grafici, PB</div>
+          </div>
+        </div>
+        <div class="section-card-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+      <div class="section-card" onclick="goSection('training')">
+        <div class="section-card-left">
+          <div class="section-icon si-training">💪</div>
+          <div>
+            <div class="section-card-title">Forza & Mobilità</div>
+            <div class="section-card-desc">Palestra, esercizi, progressioni</div>
+          </div>
+        </div>
+        <div class="section-card-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- HEALTH -->
+<div id="section-health" class="app-section">
+  <button class="back-btn" onclick="goHome()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Home
+  </button>
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">Health</div>
+      <div class="date-label" id="health-today-label"></div>
+    </div>
+    <h1>Benessere</h1>
+    <p class="subtitle">Traccia i tuoi parametri quotidiani.</p>
+    <div class="sync-status" id="health-sync-status"></div>
+  </div>
+
+  <!-- METRICHE RECENTI -->
+  <div class="health-section-label">Ultimi valori</div>
+  <div class="health-grid" id="health-latest-grid"></div>
+
+  <!-- AGGIUNGI -->
+  <div class="health-add-wrap">
+    <div class="health-add-title">+ Aggiungi misurazione</div>
+    <div class="health-form-grid">
+      <div class="field"><label>Data</label><input id="h-date" type="date"></div>
+      <div class="field"><label>Peso (kg)</label><input id="h-peso" type="text" inputmode="decimal" placeholder="75,5"></div>
+      <div class="field"><label>Ore sonno</label><input id="h-sonno" type="text" inputmode="decimal" placeholder="7,5"></div>
+      <div class="field"><label>Deep Sleep (%)</label><input id="h-deep-pct" type="text" inputmode="decimal" placeholder="18"></div>
+      <div class="field"><label>HRV (ms)</label><input id="h-hrv" type="number" placeholder="55"></div>
+      <div class="field"><label>FC riposo (bpm)</label><input id="h-fc-riposo" type="number" placeholder="52"></div>
+      <div class="field"><label>SpO2 notturna (%)</label><input id="h-spo2" type="text" inputmode="decimal" placeholder="96"></div>
+      <div class="field"><label>VO2Max</label><input id="h-vo2" type="text" inputmode="decimal" placeholder="48,5"></div>
+      <div class="field"><label>Passi (ieri)</label><input id="h-passi" type="number" placeholder="8500"></div>
+      <div class="field"><label>Kcal (ieri)</label><input id="h-kcal" type="number" placeholder="2200"></div>
+    </div>
+    <button class="btn-save" onclick="addHealthEntry()">Salva misurazione</button>
+  </div>
+
+  <!-- GRAFICI -->
+  <div class="health-section-label">Trend</div>
+  <div class="chart-card" style="margin-bottom:10px">
+    <div class="chart-header"><div class="chart-title">HRV (ms)</div><div class="chart-latest" id="h-latest-hrv">—</div></div>
+    <canvas id="chartHRV" style="max-height:130px"></canvas>
+  </div>
+  <div class="chart-card" style="margin-bottom:10px">
+    <div class="chart-header"><div class="chart-title">FC a riposo (bpm)</div><div class="chart-latest" id="h-latest-fc">—</div></div>
+    <canvas id="chartFCriposo" style="max-height:130px"></canvas>
+  </div>
+  <div class="chart-card" style="margin-bottom:10px">
+    <div class="chart-header"><div class="chart-title">Ore di sonno</div><div class="chart-latest" id="h-latest-sonno">—</div></div>
+    <canvas id="chartSonno" style="max-height:130px"></canvas>
+  </div>
+  <div class="chart-card" style="margin-bottom:10px">
+    <div class="chart-header"><div class="chart-title">Peso (kg)</div><div class="chart-latest" id="h-latest-peso">—</div></div>
+    <canvas id="chartPeso" style="max-height:130px"></canvas>
+  </div>
+
+  <!-- LOG -->
+  <div class="health-section-label">Storico</div>
+  <div id="health-log-list"></div>
+</div>
+
+<!-- FORZA & MOBILITÀ -->
+<div id="section-training" class="app-section">
+  <button class="back-btn" onclick="goHome()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Home
+  </button>
+  <div class="training-placeholder">
+    <div class="training-placeholder-icon">💪</div>
+    <div class="training-placeholder-title">Forza & Mobilità</div>
+    <div class="training-placeholder-sub">Questa sezione è in costruzione.<br>Presto potrai tracciare le tue sessioni in palestra, gli esercizi e le progressioni di carico.</div>
+  </div>
+</div>
+
+<!-- RUNNING -->
+<div id="section-running" class="app-section">
+  <button class="back-btn" onclick="goHome()">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Home
+  </button>
 
 <div class="header">
   <div class="header-top">
@@ -471,6 +653,8 @@ canvas{max-height:160px}
   <button class="btn-save" onclick="addSession()">Salva allenamento</button>
 </div>
 
+</div><!-- end section-running -->
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -483,6 +667,7 @@ let syncEnabled = true;
 const now = new Date();
 document.getElementById('today-label').textContent = now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
 document.getElementById('f-date').value = now.toISOString().slice(0,10);
+document.getElementById('h-date').value = now.toISOString().slice(0,10);
 
 function showSyncStatus(msg, type) {
   const el = document.getElementById('sync-status');
@@ -537,6 +722,7 @@ function loadFromStorage() {
   } catch(e) { sessions = []; }
   if (sessions.length === 0) prefill();
   loadGoals();
+  loadHealth();
   render();
 
   // 2. Sincronizza da Google Sheets in background
@@ -1514,6 +1700,183 @@ function renderForma() {
     </div>`;
   }).join('');
   tipoGrid.innerHTML = tipoHTML || '<div style="font-size:13px;color:var(--muted)">Nessun dato nelle ultime 12 settimane.</div>';
+}
+
+// ===== SECTION NAVIGATION =====
+function goSection(name) {
+  document.querySelectorAll('.app-section').forEach(el => el.classList.remove('active'));
+  document.getElementById('section-' + name).classList.add('active');
+  window.scrollTo(0, 0);
+  if (name === 'running') setTimeout(() => { populateYearFilter(); applyFilters(); }, 60);
+  if (name === 'health') renderHealthSection();
+}
+
+function goHome() {
+  document.querySelectorAll('.app-section').forEach(el => el.classList.remove('active'));
+  document.getElementById('section-home').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// Set home date label
+document.getElementById('health-today-label').textContent = now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
+
+// ===== HEALTH =====
+const HEALTH_KEY = 'health_entries_v1';
+let healthEntries = [];
+let healthCharts = {};
+
+function loadHealth() {
+  try {
+    const r = localStorage.getItem(HEALTH_KEY);
+    if (r) healthEntries = JSON.parse(r);
+  } catch(e) { healthEntries = []; }
+}
+
+function saveHealth() {
+  try { localStorage.setItem(HEALTH_KEY, JSON.stringify(healthEntries)); } catch(e) {}
+}
+
+function addHealthEntry() {
+  const date = document.getElementById('h-date').value;
+  if (!date) { showToast('Inserisci la data'); return; }
+
+  const entry = {
+    id: 'h' + Date.now(),
+    date,
+    peso:     parseFloat(document.getElementById('h-peso').value.replace(',','.'))    || null,
+    sonno:    parseFloat(document.getElementById('h-sonno').value.replace(',','.'))   || null,
+    deepPct:  parseFloat(document.getElementById('h-deep-pct').value.replace(',','.'))|| null,
+    hrv:      parseInt(document.getElementById('h-hrv').value)       || null,
+    fcRiposo: parseInt(document.getElementById('h-fc-riposo').value) || null,
+    spo2:     parseFloat(document.getElementById('h-spo2').value.replace(',','.'))    || null,
+    vo2max:   parseFloat(document.getElementById('h-vo2').value.replace(',','.'))     || null,
+    passi:    parseInt(document.getElementById('h-passi').value)     || null,
+    kcal:     parseInt(document.getElementById('h-kcal').value)      || null,
+  };
+
+  // Replace existing entry for same date
+  const idx = healthEntries.findIndex(e => e.date === date);
+  if (idx >= 0) healthEntries[idx] = entry;
+  else healthEntries.push(entry);
+
+  saveHealth();
+  renderHealthSection();
+
+  // Clear form
+  ['h-peso','h-sonno','h-deep-pct','h-hrv','h-fc-riposo','h-spo2','h-vo2','h-passi','h-kcal'].forEach(id => document.getElementById(id).value = '');
+  showToast('Misurazione salvata ✓');
+}
+
+function deleteHealthEntry(id) {
+  if (!confirm('Eliminare questa misurazione?')) return;
+  healthEntries = healthEntries.filter(e => e.id !== id);
+  saveHealth();
+  renderHealthSection();
+}
+
+function renderHealthSection() {
+  const sorted = [...healthEntries].sort((a,b) => b.date.localeCompare(a.date));
+  const latest = sorted[0] || {};
+
+  // Latest values grid
+  const metrics = [
+    { key:'hrv',      label:'HRV',           unit:'ms',  higherBetter:true },
+    { key:'fcRiposo', label:'FC riposo',      unit:'bpm', higherBetter:false },
+    { key:'sonno',    label:'Ore sonno',      unit:'h',   higherBetter:true },
+    { key:'deepPct',  label:'Deep Sleep',     unit:'%',   higherBetter:true },
+    { key:'spo2',     label:'SpO2',           unit:'%',   higherBetter:true },
+    { key:'peso',     label:'Peso',           unit:'kg',  higherBetter:null },
+    { key:'vo2max',   label:'VO2Max',         unit:'',    higherBetter:true },
+    { key:'passi',    label:'Passi (ieri)',   unit:'',    higherBetter:true },
+  ];
+
+  const prev = sorted[1] || {};
+  const grid = document.getElementById('health-latest-grid');
+  grid.innerHTML = metrics.map(m => {
+    const val = latest[m.key];
+    const prevVal = prev[m.key];
+    let delta = '';
+    if (val != null && prevVal != null) {
+      const diff = val - prevVal;
+      const better = m.higherBetter === null ? null : (m.higherBetter ? diff > 0 : diff < 0);
+      const cls = better === null ? 'neu' : better ? 'up' : 'down';
+      const sign = diff > 0 ? '+' : '';
+      delta = `<div class="hm-delta ${cls}">${sign}${diff > 0 || diff < 0 ? (Number.isInteger(diff) ? diff : diff.toFixed(1)) : '—'} vs ieri</div>`;
+    }
+    const display = val != null ? (Number.isInteger(val) ? val.toLocaleString('it-IT') : val.toFixed(1).replace('.',',')) : '—';
+    return `<div class="health-metric-card">
+      <div class="hm-label">${m.label}</div>
+      <div class="hm-val">${display} <span class="hm-unit">${m.unit}</span></div>
+      ${delta}
+    </div>`;
+  }).join('');
+
+  // Charts
+  const chronological = [...sorted].reverse();
+  const labels = chronological.map(e => formatDate(e.date).slice(0,5));
+
+  function buildHealthChart(canvasId, latestId, data, color, unit, decimals) {
+    if (healthCharts[canvasId]) { healthCharts[canvasId].destroy(); delete healthCharts[canvasId]; }
+    const latest = data.filter(Boolean);
+    const lastVal = latest.length ? latest[latest.length-1] : null;
+    const el = document.getElementById(latestId);
+    if (el) el.textContent = lastVal != null ? (decimals ? lastVal.toFixed(1).replace('.',',') : lastVal) + (unit ? ' '+unit : '') : '—';
+    const ctx = document.getElementById(canvasId);
+    if (!ctx) return;
+    healthCharts[canvasId] = new Chart(ctx, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          borderColor: color,
+          backgroundColor: color + '18',
+          borderWidth: 2,
+          pointRadius: 3,
+          tension: 0.3,
+          fill: true,
+          spanGaps: true
+        }]
+      },
+      options: {
+        responsive: true, maintainAspectRatio: true,
+        plugins: { legend: { display: false }, tooltip: {
+          backgroundColor: '#1e2126', borderColor: '#2a2d34', borderWidth: 1,
+          titleColor: '#6b7280', bodyColor: '#f0f2f0',
+          titleFont: {family:'DM Mono',size:10}, bodyFont: {family:'DM Mono',size:12}
+        }},
+        scales: {
+          x: { ticks: { color:'#6b7280', font:{family:'DM Mono',size:9} }, grid: { color:'#1e2126' } },
+          y: { ticks: { color:'#6b7280', font:{family:'DM Mono',size:10} }, grid: { color:'#1e2126' } }
+        }
+      }
+    });
+  }
+
+  buildHealthChart('chartHRV',      'h-latest-hrv',   chronological.map(e=>e.hrv),      '#5ab4f5', 'ms',  false);
+  buildHealthChart('chartFCriposo', 'h-latest-fc',    chronological.map(e=>e.fcRiposo), '#f55a5a', 'bpm', false);
+  buildHealthChart('chartSonno',    'h-latest-sonno', chronological.map(e=>e.sonno),    '#c8f55a', 'h',   true);
+  buildHealthChart('chartPeso',     'h-latest-peso',  chronological.map(e=>e.peso),     '#f5c45a', 'kg',  true);
+
+  // Log storico
+  const logEl = document.getElementById('health-log-list');
+  if (!sorted.length) {
+    logEl.innerHTML = '<div style="font-size:13px;color:var(--muted);padding:0.5rem 0">Nessuna misurazione registrata.</div>';
+    return;
+  }
+  logEl.innerHTML = sorted.map(e => `
+    <div class="health-log-row">
+      <div>
+        <div class="hlr-date">${formatDate(e.date)}</div>
+      </div>
+      <div class="hlr-vals">
+        ${e.hrv      != null ? `<div class="hlr-val">HRV <span>${e.hrv}ms</span></div>` : ''}
+        ${e.fcRiposo != null ? `<div class="hlr-val">FC <span>${e.fcRiposo}bpm</span></div>` : ''}
+        ${e.sonno    != null ? `<div class="hlr-val">💤 <span>${String(e.sonno).replace('.',',')}h</span></div>` : ''}
+        ${e.peso     != null ? `<div class="hlr-val">⚖️ <span>${String(e.peso).replace('.',',')}kg</span></div>` : ''}
+        <button class="del-btn" onclick="deleteHealthEntry('${e.id}')">✕</button>
+      </div>
+    </div>`).join('');
 }
 
 loadFromStorage();
