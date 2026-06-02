@@ -278,8 +278,30 @@ canvas{max-height:160px}
 </head>
 <body>
 
+<!-- LOGIN -->
+<div id="section-login" class="app-section active">
+  <div style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:2rem">
+    <div style="max-width:320px;width:100%">
+      <div style="text-align:center;margin-bottom:2rem">
+        <div style="font-size:48px;margin-bottom:1rem">🔐</div>
+        <div style="font-family:var(--font-display);font-size:20px;font-weight:500;margin-bottom:0.5rem">Tracker</div>
+        <div style="font-size:13px;color:var(--muted)">Accedi per continuare</div>
+      </div>
+      
+      <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:1.5rem">
+        <div class="field">
+          <label>Password</label>
+          <input id="login-password" type="password" placeholder="••••••••" style="font-size:16px" onkeypress="if(event.key==='Enter') loginSubmit()">
+        </div>
+        <button class="btn-save" onclick="loginSubmit()" style="width:100%;margin-top:1rem">Accedi</button>
+        <div id="login-error" style="color:#f55a5a;font-size:12px;margin-top:1rem;display:none;text-align:center"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- HOME -->
-<div id="section-home" class="app-section active">
+<div id="section-home" class="app-section">
   <div class="home-wrap">
     <div class="home-logo">Tracker · 2026</div>
     <div class="home-title">Ciao,<br>bentornato.</div>
@@ -334,7 +356,14 @@ canvas{max-height:160px}
   <div class="header">
     <div class="header-top">
       <div class="logo">Health</div>
-      <div class="date-label" id="health-today-label"></div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="date-label" id="health-today-label"></div>
+        <button class="refresh-btn" onclick="logout()" title="Logout">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
+          </svg>
+        </button>
+      </div>
     </div>
     <h1>Benessere</h1>
     <p class="subtitle">Traccia i tuoi parametri quotidiani.</p>
@@ -419,6 +448,11 @@ canvas{max-height:160px}
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
           <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+        </svg>
+      </button>
+      <button class="refresh-btn" onclick="logout()" title="Logout">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
         </svg>
       </button>
     </div>
@@ -1928,7 +1962,64 @@ function renderHealthSection() {
     </div>`).join('');
 }
 
-loadFromStorage();
+// ===== LOGIN =====
+let correctPassword = null;
+let isAuthenticated = false;
+
+function initLogin() {
+  // Carica la password corretta da Google Sheets
+  fetch(SHEET_URL + '?action=getPassword', {cache: 'no-store'})
+    .then(res => res.json())
+    .then(data => {
+      correctPassword = data.password;
+      // Controlla se già autenticato in questa sessione
+      if (sessionStorage.getItem('authenticated') === 'true') {
+        isAuthenticated = true;
+        goHome();
+        loadFromStorage();
+      }
+    })
+    .catch(err => {
+      console.error('Errore caricamento password:', err);
+      showToast('Errore di connessione');
+    });
+}
+
+function loginSubmit() {
+  const input = document.getElementById('login-password').value;
+  const errorEl = document.getElementById('login-error');
+
+  if (!input) {
+    errorEl.textContent = 'Inserisci la password';
+    errorEl.style.display = 'block';
+    return;
+  }
+
+  if (input === correctPassword) {
+    isAuthenticated = true;
+    sessionStorage.setItem('authenticated', 'true');
+    errorEl.style.display = 'none';
+    document.getElementById('login-password').value = '';
+    goHome();
+    loadFromStorage();
+  } else {
+    errorEl.textContent = 'Password errata';
+    errorEl.style.display = 'block';
+    document.getElementById('login-password').value = '';
+  }
+}
+
+function logout() {
+  isAuthenticated = false;
+  sessionStorage.removeItem('authenticated');
+  document.getElementById('login-password').value = '';
+  document.querySelectorAll('.app-section').forEach(el => el.classList.remove('active'));
+  document.getElementById('section-login').classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// Inizializza login al caricamento
+initLogin();
 </script>
 </body>
 </html>
