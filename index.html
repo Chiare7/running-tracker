@@ -293,7 +293,7 @@ canvas{max-height:160px}
           <label>Password</label>
           <input id="login-password" type="password" placeholder="••••••••" style="font-size:16px" onkeypress="if(event.key==='Enter') loginSubmit()">
         </div>
-        <button class="btn-save" onclick="loginSubmit()" style="width:100%;margin-top:1rem">Accedi</button>
+        <button id="login-btn" class="btn-save" onclick="loginSubmit()" style="width:100%;margin-top:1rem" disabled>Caricamento...</button>
         <div id="login-error" style="color:#f55a5a;font-size:12px;margin-top:1rem;display:none;text-align:center"></div>
       </div>
     </div>
@@ -1972,6 +1972,12 @@ function initLogin() {
     .then(res => res.json())
     .then(data => {
       correctPassword = data.password;
+      // Abilita il button una volta caricata la password
+      const btn = document.getElementById('login-btn');
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Accedi';
+      }
       // Controlla se già autenticato in questa sessione
       if (sessionStorage.getItem('authenticated') === 'true') {
         isAuthenticated = true;
@@ -1981,13 +1987,29 @@ function initLogin() {
     })
     .catch(err => {
       console.error('Errore caricamento password:', err);
-      showToast('Errore di connessione');
+      const btn = document.getElementById('login-btn');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Errore di connessione';
+      }
+      const errorEl = document.getElementById('login-error');
+      if (errorEl) {
+        errorEl.textContent = 'Impossibile connettersi al server. Ricarica la pagina.';
+        errorEl.style.display = 'block';
+      }
     });
 }
 
 function loginSubmit() {
   const input = document.getElementById('login-password').value;
   const errorEl = document.getElementById('login-error');
+
+  // Se la password non è stata caricata da Sheets, blocca il login
+  if (!correctPassword) {
+    errorEl.textContent = 'Errore di connessione. Ricarica la pagina.';
+    errorEl.style.display = 'block';
+    return;
+  }
 
   if (!input) {
     errorEl.textContent = 'Inserisci la password';
