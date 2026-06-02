@@ -1730,6 +1730,32 @@ function loadHealth() {
     const r = localStorage.getItem(HEALTH_KEY);
     if (r) healthEntries = JSON.parse(r);
   } catch(e) { healthEntries = []; }
+
+  // Sync from Google Sheets Health sheet
+  if (!syncEnabled) return;
+  fetch(SHEET_URL + '?action=getAllHealth', {cache: 'no-store'})
+    .then(res => res.text())
+    .then(text => {
+      try {
+        const data = JSON.parse(text);
+        if (Array.isArray(data) && data.length > 0) {
+          healthEntries = data.map(e => ({
+            ...e,
+            peso:     parseFloat(e.peso)     || null,
+            sonno:    parseFloat(e.sonno)    || null,
+            deepPct:  parseFloat(e.deepPct)  || null,
+            hrv:      parseInt(e.hrv)        || null,
+            fcRiposo: parseInt(e.fcRiposo)   || null,
+            spo2:     parseFloat(e.spo2)     || null,
+            vo2max:   parseFloat(e.vo2max)   || null,
+            passi:    parseInt(e.passi)      || null,
+            kcal:     parseInt(e.kcal)       || null,
+          }));
+          saveHealth();
+        }
+      } catch(err) {}
+    })
+    .catch(() => {});
 }
 
 function saveHealth() {
@@ -1765,6 +1791,19 @@ function addHealthEntry() {
   // Clear form
   ['h-peso','h-sonno','h-deep-pct','h-hrv','h-fc-riposo','h-spo2','h-vo2','h-passi','h-kcal'].forEach(id => document.getElementById(id).value = '');
   showToast('Misurazione salvata ✓');
+
+  // Sync to Google Sheets in background
+  showSyncStatus('Salvataggio su Sheets…', 'loading');
+  const params = new URLSearchParams({
+    action: 'addHealth',
+    id: entry.id, date: entry.date,
+    peso: entry.peso||'', sonno: entry.sonno||'', deepPct: entry.deepPct||'',
+    hrv: entry.hrv||'', fcRiposo: entry.fcRiposo||'', spo2: entry.spo2||'',
+    vo2max: entry.vo2max||'', passi: entry.passi||'', kcal: entry.kcal||''
+  });
+  fetch(SHEET_URL + '?' + params.toString(), {cache: 'no-store'})
+    .then(() => showSyncStatus('Salvato su Sheets ✓', 'ok'))
+    .catch(() => showSyncStatus('Salvato solo in locale', 'warn'));
 }
 
 function deleteHealthEntry(id) {
@@ -1772,6 +1811,11 @@ function deleteHealthEntry(id) {
   healthEntries = healthEntries.filter(e => e.id !== id);
   saveHealth();
   renderHealthSection();
+  showToast('Misurazione eliminata');
+
+  // Sync delete to Google Sheets
+  fetch(SHEET_URL + '?action=deleteHealth&id=' + id, {cache: 'no-store'})
+    .catch(() => {});
 }
 
 function renderHealthSection() {
