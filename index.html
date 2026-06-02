@@ -348,6 +348,9 @@ canvas{max-height:160px}
   <!-- AGGIUNGI -->
   <div class="health-add-wrap">
     <div class="health-add-title">+ Aggiungi misurazione</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:1rem;padding:0.75rem;background:var(--bg);border-radius:8px;border-left:2px solid var(--accent)">
+      ℹ️ I dati rappresentano la <strong>media della settimana</strong> che va dai 7 giorni precedenti alla data inserita (inclusa).
+    </div>
     <div class="health-form-grid">
       <div class="field"><label>Data</label><input id="h-date" type="date"></div>
       <div class="field"><label>Peso (kg)</label><input id="h-peso" type="text" inputmode="decimal" placeholder="75,5"></div>
@@ -355,10 +358,10 @@ canvas{max-height:160px}
       <div class="field"><label>Deep Sleep (%)</label><input id="h-deep-pct" type="text" inputmode="decimal" placeholder="18"></div>
       <div class="field"><label>HRV (ms)</label><input id="h-hrv" type="number" placeholder="55"></div>
       <div class="field"><label>FC riposo (bpm)</label><input id="h-fc-riposo" type="number" placeholder="52"></div>
-      <div class="field"><label>SpO2 notturna (%)</label><input id="h-spo2" type="text" inputmode="decimal" placeholder="96"></div>
       <div class="field"><label>VO2Max</label><input id="h-vo2" type="text" inputmode="decimal" placeholder="48,5"></div>
       <div class="field"><label>Passi (ieri)</label><input id="h-passi" type="number" placeholder="8500"></div>
       <div class="field"><label>Kcal (ieri)</label><input id="h-kcal" type="number" placeholder="2200"></div>
+      <div style="grid-column:1/-1"><label>Note</label><input id="h-note" type="text" placeholder="Es: scarso sonno, stress, malattia..."></div>
     </div>
     <button class="btn-save" onclick="addHealthEntry()">Salva misurazione</button>
   </div>
@@ -1746,10 +1749,10 @@ function loadHealth() {
             deepPct:  parseFloat(e.deepPct)  || null,
             hrv:      parseInt(e.hrv)        || null,
             fcRiposo: parseInt(e.fcRiposo)   || null,
-            spo2:     parseFloat(e.spo2)     || null,
             vo2max:   parseFloat(e.vo2max)   || null,
             passi:    parseInt(e.passi)      || null,
             kcal:     parseInt(e.kcal)       || null,
+            note:     e.note || '',
           }));
           saveHealth();
         }
@@ -1774,35 +1777,37 @@ function addHealthEntry() {
     deepPct:  parseFloat(document.getElementById('h-deep-pct').value.replace(',','.'))|| null,
     hrv:      parseInt(document.getElementById('h-hrv').value)       || null,
     fcRiposo: parseInt(document.getElementById('h-fc-riposo').value) || null,
-    spo2:     parseFloat(document.getElementById('h-spo2').value.replace(',','.'))    || null,
     vo2max:   parseFloat(document.getElementById('h-vo2').value.replace(',','.'))     || null,
     passi:    parseInt(document.getElementById('h-passi').value)     || null,
     kcal:     parseInt(document.getElementById('h-kcal').value)      || null,
+    note:     document.getElementById('h-note').value.trim()         || '',
   };
 
-  // Replace existing entry for same date
-  const idx = healthEntries.findIndex(e => e.date === date);
-  if (idx >= 0) healthEntries[idx] = entry;
-  else healthEntries.push(entry);
-
+  // 1. Salva subito in locale e aggiorna UI
+  healthEntries.push(entry);
   saveHealth();
   renderHealthSection();
 
   // Clear form
-  ['h-peso','h-sonno','h-deep-pct','h-hrv','h-fc-riposo','h-spo2','h-vo2','h-passi','h-kcal'].forEach(id => document.getElementById(id).value = '');
+  ['h-peso','h-sonno','h-deep-pct','h-hrv','h-fc-riposo','h-vo2','h-passi','h-kcal','h-note'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('h-date').value = new Date().toISOString().slice(0,10);
   showToast('Misurazione salvata ✓');
 
-  // Sync to Google Sheets in background
+  // 2. Sync to Google Sheets
   showSyncStatus('Salvataggio su Sheets…', 'loading');
   const params = new URLSearchParams({
     action: 'addHealth',
     id: entry.id, date: entry.date,
     peso: entry.peso||'', sonno: entry.sonno||'', deepPct: entry.deepPct||'',
-    hrv: entry.hrv||'', fcRiposo: entry.fcRiposo||'', spo2: entry.spo2||'',
-    vo2max: entry.vo2max||'', passi: entry.passi||'', kcal: entry.kcal||''
+    hrv: entry.hrv||'', fcRiposo: entry.fcRiposo||'',
+    vo2max: entry.vo2max||'', passi: entry.passi||'', kcal: entry.kcal||'',
+    note: entry.note||''
   });
   fetch(SHEET_URL + '?' + params.toString(), {cache: 'no-store'})
-    .then(() => showSyncStatus('Salvato su Sheets ✓', 'ok'))
+    .then(() => {
+      showSyncStatus('Salvato su Sheets ✓', 'ok');
+      setTimeout(() => showSyncStatus('', ''), 3000);
+    })
     .catch(() => showSyncStatus('Salvato solo in locale', 'warn'));
 }
 
@@ -1828,7 +1833,6 @@ function renderHealthSection() {
     { key:'fcRiposo', label:'FC riposo',      unit:'bpm', higherBetter:false },
     { key:'sonno',    label:'Ore sonno',      unit:'h',   higherBetter:true },
     { key:'deepPct',  label:'Deep Sleep',     unit:'%',   higherBetter:true },
-    { key:'spo2',     label:'SpO2',           unit:'%',   higherBetter:true },
     { key:'peso',     label:'Peso',           unit:'kg',  higherBetter:null },
     { key:'vo2max',   label:'VO2Max',         unit:'',    higherBetter:true },
     { key:'passi',    label:'Passi (ieri)',   unit:'',    higherBetter:true },
@@ -1912,6 +1916,7 @@ function renderHealthSection() {
     <div class="health-log-row">
       <div>
         <div class="hlr-date">${formatDate(e.date)}</div>
+        ${e.note ? `<div style="font-size:10px;color:var(--muted);margin-top:4px">📝 ${e.note}</div>` : ''}
       </div>
       <div class="hlr-vals">
         ${e.hrv      != null ? `<div class="hlr-val">HRV <span>${e.hrv}ms</span></div>` : ''}
