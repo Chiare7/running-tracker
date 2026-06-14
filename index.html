@@ -358,6 +358,12 @@ canvas{max-height:160px}
       <div class="logo">Health</div>
       <div style="display:flex;align-items:center;gap:10px">
         <div class="date-label" id="health-today-label"></div>
+        <button class="refresh-btn" onclick="loadHealth(); renderHealthSection(); showToast('Dati aggiornati da Sheets ✓')" title="Aggiorna dati da Google Sheets">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+          </svg>
+        </button>
         <button class="refresh-btn" onclick="logout()" title="Logout">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>
@@ -371,7 +377,7 @@ canvas{max-height:160px}
   </div>
 
   <!-- METRICHE RECENTI -->
-  <div class="health-section-label">Ultimi valori</div>
+  <div class="health-section-label">Ultime misurazioni settimanali</div>
   <div class="health-grid" id="health-latest-grid"></div>
 
   <!-- AGGIUNGI -->
@@ -390,32 +396,32 @@ canvas{max-height:160px}
       <div class="field"><label>VO2Max</label><input id="h-vo2" type="text" inputmode="decimal" placeholder="48,5"></div>
       <div class="field"><label>Passi (ieri)</label><input id="h-passi" type="number" placeholder="8500"></div>
       <div class="field"><label>Kcal (ieri)</label><input id="h-kcal" type="number" placeholder="2200"></div>
-      <div style="grid-column:1/-1"><label>Note</label><input id="h-note" type="text" placeholder="Es: scarso sonno, stress, malattia..."></div>
+      <div style="grid-column:1/-1"><label>Note</label><textarea id="h-note" placeholder="Es: scarso sonno, stress, malattia..." style="min-height:60px;resize:none"></textarea></div>
     </div>
     <button class="btn-save" onclick="addHealthEntry()">Salva misurazione</button>
   </div>
 
   <!-- GRAFICI -->
-  <div class="health-section-label">Trend</div>
+  <div class="health-section-label">Trend settimanale</div>
   <div class="chart-card" style="margin-bottom:10px">
-    <div class="chart-header"><div class="chart-title">HRV (ms)</div><div class="chart-latest" id="h-latest-hrv">—</div></div>
+    <div class="chart-header"><div class="chart-title">HRV (ms) — media settimanale</div><div class="chart-latest" id="h-latest-hrv">—</div></div>
     <canvas id="chartHRV" style="max-height:130px"></canvas>
   </div>
   <div class="chart-card" style="margin-bottom:10px">
-    <div class="chart-header"><div class="chart-title">FC a riposo (bpm)</div><div class="chart-latest" id="h-latest-fc">—</div></div>
+    <div class="chart-header"><div class="chart-title">FC a riposo (bpm) — media settimanale</div><div class="chart-latest" id="h-latest-fc">—</div></div>
     <canvas id="chartFCriposo" style="max-height:130px"></canvas>
   </div>
   <div class="chart-card" style="margin-bottom:10px">
-    <div class="chart-header"><div class="chart-title">Ore di sonno</div><div class="chart-latest" id="h-latest-sonno">—</div></div>
+    <div class="chart-header"><div class="chart-title">Ore di sonno — media settimanale</div><div class="chart-latest" id="h-latest-sonno">—</div></div>
     <canvas id="chartSonno" style="max-height:130px"></canvas>
   </div>
   <div class="chart-card" style="margin-bottom:10px">
-    <div class="chart-header"><div class="chart-title">Peso (kg)</div><div class="chart-latest" id="h-latest-peso">—</div></div>
+    <div class="chart-header"><div class="chart-title">Peso (kg) — media settimanale</div><div class="chart-latest" id="h-latest-peso">—</div></div>
     <canvas id="chartPeso" style="max-height:130px"></canvas>
   </div>
 
-  <!-- LOG -->
-  <div class="health-section-label">Storico</div>
+  <!-- LOG STORICO -->
+  <div class="health-section-label">Storico settimanale</div>
   <div id="health-log-list"></div>
 </div>
 
@@ -1966,6 +1972,9 @@ function renderHealthSection() {
 let correctPassword = null;
 let isAuthenticated = false;
 
+// Pulisci sessionStorage al caricamento della login page
+sessionStorage.removeItem('authenticated');
+
 function initLogin() {
   // Carica la password corretta da Google Sheets
   fetch(SHEET_URL + '?action=getPassword', {cache: 'no-store'})
@@ -1977,12 +1986,6 @@ function initLogin() {
       if (btn) {
         btn.disabled = false;
         btn.textContent = 'Accedi';
-      }
-      // Controlla se già autenticato in questa sessione
-      if (sessionStorage.getItem('authenticated') === 'true') {
-        isAuthenticated = true;
-        goHome();
-        loadFromStorage();
       }
     })
     .catch(err => {
