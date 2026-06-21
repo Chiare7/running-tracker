@@ -260,7 +260,7 @@ canvas{max-height:160px}
 .hm-delta.down{color:var(--red)}
 .hm-delta.neu{color:var(--muted)}
 .health-section-label{font-size:10px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;margin:1.5rem 0 0.75rem;padding-bottom:6px;border-bottom:0.5px solid var(--border)}
-.health-log-row{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:0.85rem 1rem;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+.health-log-row{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:0.85rem 1rem;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
 .hlr-date{font-size:12px;font-family:var(--font-display);color:var(--text)}
 .hlr-vals{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end}
 .hlr-val{font-size:11px;font-family:var(--font-display);color:var(--muted);white-space:nowrap}
@@ -1919,6 +1919,13 @@ function deleteHealthEntry(id) {
     .catch(() => {});
 }
 
+function hoursToHHMM(hours) {
+  if (!hours) return '';
+  const h = Math.floor(hours);
+  const m = Math.round((hours - h) * 60);
+  return `${h}:${String(m).padStart(2, '0')}`;
+}
+
 function renderHealthSection() {
   const sorted = [...healthEntries].sort((a,b) => b.date.localeCompare(a.date));
   const latest = sorted[0] || {};
@@ -1967,12 +1974,20 @@ function renderHealthSection() {
     return String(e.date).slice(0, 5);
   });
 
-  function buildHealthChart(canvasId, latestId, data, color, unit, decimals) {
+  function buildHealthChart(canvasId, latestId, data, color, unit, decimals, formatter) {
     if (healthCharts[canvasId]) { healthCharts[canvasId].destroy(); delete healthCharts[canvasId]; }
     const latest = data.filter(Boolean);
     const lastVal = latest.length ? latest[latest.length-1] : null;
     const el = document.getElementById(latestId);
-    if (el) el.textContent = lastVal != null ? (decimals ? lastVal.toFixed(1).replace('.',',') : lastVal) + (unit ? ' '+unit : '') : '—';
+    if (el) {
+      let displayVal;
+      if (lastVal != null) {
+        displayVal = formatter ? formatter(lastVal) : (decimals ? lastVal.toFixed(1).replace('.',',') : lastVal);
+        el.textContent = displayVal + (unit ? ' '+unit : '');
+      } else {
+        el.textContent = '—';
+      }
+    }
     const ctx = document.getElementById(canvasId);
     if (!ctx) return;
     healthCharts[canvasId] = new Chart(ctx, {
@@ -2007,7 +2022,7 @@ function renderHealthSection() {
 
   buildHealthChart('chartHRV',      'h-latest-hrv',   chronological.map(e=>e.hrv),      '#5ab4f5', 'ms',  false);
   buildHealthChart('chartFCriposo', 'h-latest-fc',    chronological.map(e=>e.fcRiposo), '#f55a5a', 'bpm', false);
-  buildHealthChart('chartSonno',    'h-latest-sonno', chronological.map(e=>e.sonno),    '#c8f55a', 'h',   true);
+  buildHealthChart('chartSonno',    'h-latest-sonno', chronological.map(e=>e.sonno),    '#c8f55a', 'h',   true, hoursToHHMM);
   buildHealthChart('chartPeso',     'h-latest-peso',  chronological.map(e=>e.peso),     '#f5c45a', 'kg',  true);
 
   // Log storico
@@ -2018,17 +2033,21 @@ function renderHealthSection() {
   }
   logEl.innerHTML = sorted.map(e => `
     <div class="health-log-row">
-      <div>
+      <div style="flex:1">
         <div class="hlr-date">${formatDate(e.date)}</div>
-        ${e.note ? `<div style="font-size:10px;color:var(--muted);margin-top:4px">📝 ${e.note}</div>` : ''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;font-size:11px">
+          ${e.peso     != null ? `<div><span style="color:var(--muted)">Peso</span> <span style="color:var(--text);font-weight:500">${String(e.peso).replace('.',',')} kg</span></div>` : ''}
+          ${e.sonno    != null ? `<div><span style="color:var(--muted)">Sonno</span> <span style="color:var(--text);font-weight:500">${hoursToHHMM(e.sonno)}</span></div>` : ''}
+          ${e.deepPct  != null ? `<div><span style="color:var(--muted)">Deep Sleep</span> <span style="color:var(--text);font-weight:500">${String(e.deepPct).replace('.',',')}%</span></div>` : ''}
+          ${e.hrv      != null ? `<div><span style="color:var(--muted)">HRV</span> <span style="color:var(--text);font-weight:500">${e.hrv} ms</span></div>` : ''}
+          ${e.fcRiposo != null ? `<div><span style="color:var(--muted)">FC riposo</span> <span style="color:var(--text);font-weight:500">${e.fcRiposo} bpm</span></div>` : ''}
+          ${e.vo2max   != null ? `<div><span style="color:var(--muted)">VO2Max</span> <span style="color:var(--text);font-weight:500">${String(e.vo2max).replace('.',',')}</span></div>` : ''}
+          ${e.passi    != null ? `<div><span style="color:var(--muted)">Passi</span> <span style="color:var(--text);font-weight:500">${e.passi.toLocaleString('it-IT')}</span></div>` : ''}
+          ${e.kcal     != null ? `<div><span style="color:var(--muted)">Kcal</span> <span style="color:var(--text);font-weight:500">${e.kcal.toLocaleString('it-IT')}</span></div>` : ''}
+        </div>
+        ${e.note ? `<div style="font-size:10px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)">📝 ${e.note}</div>` : ''}
       </div>
-      <div class="hlr-vals">
-        ${e.hrv      != null ? `<div class="hlr-val">HRV <span>${e.hrv}ms</span></div>` : ''}
-        ${e.fcRiposo != null ? `<div class="hlr-val">FC <span>${e.fcRiposo}bpm</span></div>` : ''}
-        ${e.sonno    != null ? `<div class="hlr-val">💤 <span>${String(e.sonno).replace('.',',')}h</span></div>` : ''}
-        ${e.peso     != null ? `<div class="hlr-val">⚖️ <span>${String(e.peso).replace('.',',')}kg</span></div>` : ''}
-        <button class="del-btn" onclick="deleteHealthEntry('${e.id}')">✕</button>
-      </div>
+      <button class="del-btn" onclick="deleteHealthEntry('${e.id}')" style="align-self:flex-start">✕</button>
     </div>`).join('');
 }
 
