@@ -741,12 +741,28 @@ function parseKm(val) {
 function parseDate(val) {
   if (!val) return '';
   const s = String(val).trim();
+  
+  // Se inizia con un giorno della settimana (Sun, Mon, etc) = formato JavaScript Date.toString()
+  if (/^(Mon|Tue|Wed|Thu|Fri|Sat|Sun)/.test(s)) {
+    try {
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) {
+        const year = d.getFullYear();
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+    } catch(e) {}
+  }
+  
   // dd/mm/yyyy → yyyy-mm-dd
   const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
+  
   // ISO datetime: 2026-06-18T00:00:00.000Z → 2026-06-18 (prendi solo la parte data, ignora timezone)
   const iso = s.match(/^(\d{4}-\d{2}-\d{2})/);
   if (iso) return iso[1];
+  
   return s;
 }
 
