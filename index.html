@@ -1949,9 +1949,25 @@ function formatDateItalian(d) {
 }
 
 function hoursToHHMM(hours) {
-  if (!hours) return '';
-  const h = Math.floor(hours);
-  const m = Math.round((hours - h) * 60);
+  if (!hours && hours !== 0) return '';
+  const s = String(hours).trim();
+  
+  // Se è già nel formato "HH:MM" (contiene i due punti), restituiscilo così com'è
+  if (s.includes(':')) return s;
+  
+  // Se è un numero, convertilo (potrebbe essere da Google Sheets TIME format)
+  const num = parseFloat(s.replace(',', '.'));
+  if (isNaN(num)) return '';
+  
+  // Se il numero è < 24, assumilo come ore decimali (7.5 = 7:30)
+  // Se il numero è < 1, assumilo come frazione del giorno (0.3125 = 7.5 ore = 7:30)
+  let totalHours = num;
+  if (num < 1 && num > 0) {
+    totalHours = num * 24; // Converti da frazione del giorno a ore
+  }
+  
+  const h = Math.floor(totalHours);
+  const m = Math.round((totalHours - h) * 60);
   return `${h}:${String(m).padStart(2, '0')}`;
 }
 
