@@ -1919,6 +1919,17 @@ function deleteHealthEntry(id) {
     .catch(() => {});
 }
 
+function formatDateItalian(d) {
+  if (!d) return '';
+  const parts = String(d).slice(0,10).split('-');
+  if (parts.length !== 3) return d;
+  const months = ['gennaio', 'febbraio', 'marzo', 'aprile', 'maggio', 'giugno', 'luglio', 'agosto', 'settembre', 'ottobre', 'novembre', 'dicembre'];
+  const day = parts[2];
+  const month = months[parseInt(parts[1]) - 1];
+  const year = parts[0];
+  return `${day} ${month} ${year}`;
+}
+
 function hoursToHHMM(hours) {
   if (!hours) return '';
   const h = Math.floor(hours);
@@ -2033,9 +2044,9 @@ function renderHealthSection() {
   }
   logEl.innerHTML = sorted.map(e => `
     <div class="health-log-row">
-      <div style="flex:1">
-        <div class="hlr-date">${formatDate(e.date)}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;font-size:11px">
+      <div style="flex:1;display:flex;gap:1.5rem;align-items:center;font-size:12px;flex-wrap:wrap">
+        <div style="font-weight:500;color:var(--text);min-width:150px">${formatDateItalian(e.date)}</div>
+        <div style="display:flex;gap:1.5rem;flex-wrap:wrap;flex:1">
           ${e.peso     != null ? `<div><span style="color:var(--muted)">Peso</span> <span style="color:var(--text);font-weight:500">${String(e.peso).replace('.',',')} kg</span></div>` : ''}
           ${e.sonno    != null ? `<div><span style="color:var(--muted)">Sonno</span> <span style="color:var(--text);font-weight:500">${hoursToHHMM(e.sonno)}</span></div>` : ''}
           ${e.deepPct  != null ? `<div><span style="color:var(--muted)">Deep Sleep</span> <span style="color:var(--text);font-weight:500">${String(e.deepPct).replace('.',',')}%</span></div>` : ''}
@@ -2045,9 +2056,9 @@ function renderHealthSection() {
           ${e.passi    != null ? `<div><span style="color:var(--muted)">Passi</span> <span style="color:var(--text);font-weight:500">${e.passi.toLocaleString('it-IT')}</span></div>` : ''}
           ${e.kcal     != null ? `<div><span style="color:var(--muted)">Kcal</span> <span style="color:var(--text);font-weight:500">${e.kcal.toLocaleString('it-IT')}</span></div>` : ''}
         </div>
-        ${e.note ? `<div style="font-size:10px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border)">📝 ${e.note}</div>` : ''}
+        ${e.note ? `<div style="width:100%;font-size:11px;color:var(--muted);padding-top:8px;border-top:0.5px solid var(--border);margin-top:4px">📝 ${e.note}</div>` : ''}
       </div>
-      <button class="del-btn" onclick="deleteHealthEntry('${e.id}')" style="align-self:flex-start">✕</button>
+      <button class="del-btn" onclick="deleteHealthEntry('${e.id}')" style="flex-shrink:0">✕</button>
     </div>`).join('');
 }
 
