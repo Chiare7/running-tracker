@@ -1856,6 +1856,7 @@ function loadHealth() {
         if (Array.isArray(data) && data.length > 0) {
           healthEntries = data.map(e => ({
             ...e,
+            date:     parseDate(e.date),
             peso:     parseFloat(e.peso)     || null,
             sonno:    parseFloat(e.sonno)    || null,
             deepPct:  parseFloat(e.deepPct)  || null,
