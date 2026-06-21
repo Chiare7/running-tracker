@@ -751,10 +751,66 @@ function parseDate(val) {
 }
 
 function resetData() {
-  const btn = document.querySelector('.refresh-btn');
-  if (btn) btn.classList.add('spinning');
-  localStorage.clear();
-  location.reload();
+  // Salva l'autenticazione prima di pulire localStorage
+  const isAuth = sessionStorage.getItem('authenticated');
+  
+  // Pulisci solo i dati locali (non la sessione)
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(HEALTH_KEY);
+  localStorage.removeItem(GOALS_KEY);
+  
+  // Ripristina l'autenticazione
+  if (isAuth) sessionStorage.setItem('authenticated', 'true');
+  
+  // Ricarica i dati da Sheets senza fare reload della pagina
+  showSyncStatus('Aggiornamento…', 'loading');
+  
+  fetch(SHEET_URL + '?action=getAll', {cache: 'no-store'})
+    .then(res => res.text())
+    .then(text => {
+      const data = JSON.parse(text);
+      if (Array.isArray(data) && data.length > 0) {
+        sessions = data.map(s => ({
+          ...s,
+          date:  parseDate(s.date),
+          km:    parseKm(s.km),
+          fc:    parseInt(s.fc)    || null,
+          fcmax: parseInt(s.fcmax) || null,
+          cad:   parseInt(s.cad)   || null,
+          elev:  parseInt(s.elev)  || null,
+          cal:   parseInt(s.cal)   || null,
+          pow:   parseInt(s.pow)   || null,
+        }));
+        saveLocal();
+      }
+      showSyncStatus('Aggiornamento completato ✓', 'ok');
+      setTimeout(() => showSyncStatus('', ''), 2000);
+    })
+    .catch(err => {
+      showSyncStatus('Errore aggiornamento', 'warn');
+    });
+
+  // Aggiorna Health
+  fetch(SHEET_URL + '?action=getAllHealth', {cache: 'no-store'})
+    .then(res => res.json())
+    .then(data => {
+      if (Array.isArray(data) && data.length > 0) {
+        healthEntries = data.map(e => ({
+          ...e,
+          peso:     parseFloat(e.peso)     || null,
+          sonno:    parseFloat(e.sonno)    || null,
+          deepPct:  parseFloat(e.deepPct)  || null,
+          hrv:      parseInt(e.hrv)        || null,
+          fcRiposo: parseInt(e.fcRiposo)   || null,
+          vo2max:   parseFloat(e.vo2max)   || null,
+          passi:    parseInt(e.passi)      || null,
+          kcal:     parseInt(e.kcal)       || null,
+          note:     e.note || '',
+        }));
+        saveHealth();
+      }
+    })
+    .catch(err => {});
 }
 
 function loadFromStorage() {
@@ -1889,7 +1945,7 @@ function renderHealthSection() {
       const better = m.higherBetter === null ? null : (m.higherBetter ? diff > 0 : diff < 0);
       const cls = better === null ? 'neu' : better ? 'up' : 'down';
       const sign = diff > 0 ? '+' : '';
-      delta = `<div class="hm-delta ${cls}">${sign}${diff > 0 || diff < 0 ? (Number.isInteger(diff) ? diff : diff.toFixed(1)) : '—'} vs ieri</div>`;
+      delta = `<div class="hm-delta ${cls}">${sign}${diff > 0 || diff < 0 ? (Number.isInteger(diff) ? diff : diff.toFixed(1)) : '—'} vs settimana scorsa</div>`;
     }
     const display = val != null ? (Number.isInteger(val) ? val.toLocaleString('it-IT') : val.toFixed(1).replace('.',',')) : '—';
     return `<div class="health-metric-card">
@@ -1901,7 +1957,15 @@ function renderHealthSection() {
 
   // Charts
   const chronological = [...sorted].reverse();
-  const labels = chronological.map(e => formatDate(e.date).slice(0,5));
+  const labels = chronological.map(e => {
+    const normalized = parseDate(e.date);  // converte a yyyy-mm-dd se necessario
+    const parts = normalized.split('-');
+    if (parts.length === 3) {
+      // yyyy-mm-dd → dd/mm
+      return `${parts[2]}/${parts[1]}`;
+    }
+    return String(e.date).slice(0, 5);
+  });
 
   function buildHealthChart(canvasId, latestId, data, color, unit, decimals) {
     if (healthCharts[canvasId]) { healthCharts[canvasId].destroy(); delete healthCharts[canvasId]; }
