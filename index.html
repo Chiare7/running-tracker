@@ -1858,7 +1858,7 @@ function loadHealth() {
             ...e,
             date:     parseDate(e.date),
             peso:     parseFloat(e.peso)     || null,
-            sonno:    parseFloat(e.sonno)    || null,
+            sonno:    e.sonno ? (String(e.sonno).includes(':') ? e.sonno : parseFloat(e.sonno)) : null,
             deepPct:  parseFloat(e.deepPct)  || null,
             hrv:      parseInt(e.hrv)        || null,
             fcRiposo: parseInt(e.fcRiposo)   || null,
