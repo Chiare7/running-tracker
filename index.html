@@ -744,7 +744,7 @@ function parseDate(val) {
   // dd/mm/yyyy → yyyy-mm-dd
   const dmy = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})/);
   if (dmy) return `${dmy[3]}-${dmy[2].padStart(2,'0')}-${dmy[1].padStart(2,'0')}`;
-  // ISO datetime: 2026-04-19T00:00:00.000Z → 2026-04-19
+  // ISO datetime: 2026-06-18T00:00:00.000Z → 2026-06-18 (prendi solo la parte data, ignora timezone)
   const iso = s.match(/^(\d{4}-\d{2}-\d{2})/);
   if (iso) return iso[1];
   return s;
