@@ -1853,8 +1853,10 @@ function loadHealth() {
   fetch(SHEET_URL + '?action=getAllHealth', {cache: 'no-store'})
     .then(res => res.text())
     .then(text => {
+      console.log('Health raw response:', text);
       try {
         const data = JSON.parse(text);
+        console.log('Health parsed data:', data);
         if (Array.isArray(data) && data.length > 0) {
           healthEntries = data.map(e => ({
             ...e,
