@@ -825,6 +825,7 @@ function resetData() {
           note:     e.note || '',
         }));
         saveHealth();
+        renderHealthSection();
       }
     })
     .catch(err => {});
