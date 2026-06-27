@@ -813,8 +813,9 @@ function resetData() {
       if (Array.isArray(data) && data.length > 0) {
         healthEntries = data.map(e => ({
           ...e,
+          date:     parseDate(e.date),
           peso:     parseFloat(e.peso)     || null,
-          sonno:    parseFloat(e.sonno)    || null,
+          sonno:    e.sonno ? String(e.sonno) : null,
           deepPct:  parseFloat(e.deepPct)  || null,
           hrv:      parseInt(e.hrv)        || null,
           fcRiposo: parseInt(e.fcRiposo)   || null,
@@ -1858,7 +1859,7 @@ function loadHealth() {
             ...e,
             date:     parseDate(e.date),
             peso:     parseFloat(e.peso)     || null,
-            sonno:    parseFloat(e.sonno)    || null,
+            sonno:    e.sonno || null,
             deepPct:  parseFloat(e.deepPct)  || null,
             hrv:      parseInt(e.hrv)        || null,
             fcRiposo: parseInt(e.fcRiposo)   || null,
@@ -2082,7 +2083,7 @@ function renderHealthSection() {
         <div style="font-weight:500;color:var(--text);min-width:150px">${formatDateItalian(e.date)}</div>
         <div style="display:flex;gap:1.5rem;flex-wrap:wrap;flex:1">
           ${e.peso     != null ? `<div><span style="color:var(--muted)">Peso</span> <span style="color:var(--text);font-weight:500">${String(e.peso).replace('.',',')} kg</span></div>` : ''}
-          ${e.sonno    != null ? `<div><span style="color:var(--muted)">Sonno</span> <span style="color:var(--text);font-weight:500">${hoursToHHMM(e.sonno)}</span></div>` : ''}
+          ${e.sonno    != null ? `<div><span style="color:var(--muted)">Sonno</span> <span style="color:var(--text);font-weight:500">${e.sonno}</span></div>` : ''}
           ${e.deepPct  != null ? `<div><span style="color:var(--muted)">Deep Sleep</span> <span style="color:var(--text);font-weight:500">${String(e.deepPct).replace('.',',')}%</span></div>` : ''}
           ${e.hrv      != null ? `<div><span style="color:var(--muted)">HRV</span> <span style="color:var(--text);font-weight:500">${e.hrv} ms</span></div>` : ''}
           ${e.fcRiposo != null ? `<div><span style="color:var(--muted)">FC riposo</span> <span style="color:var(--text);font-weight:500">${e.fcRiposo} bpm</span></div>` : ''}
