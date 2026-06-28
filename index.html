@@ -1866,15 +1866,19 @@ function loadHealth() {
   // Carica subito da localStorage come fallback
   try {
     const r = localStorage.getItem(HEALTH_KEY);
+    console.log('localStorage HEALTH_KEY:', r);
     if (r) {
       healthEntries = JSON.parse(r);
+      console.log('healthEntries da localStorage:', healthEntries.length);
       renderHealthSection();
     }
   } catch(e) { healthEntries = []; }
 
   // Sempre aggiorna da Google Sheets (fonte di verità)
+  console.log('Avvio fetchJSONP Health...');
   fetchJSONP(SHEET_URL + '?action=getAllHealth')
     .then(data => {
+      console.log('Health data ricevuta:', data);
       if (Array.isArray(data) && data.length > 0) {
         healthEntries = data.map(e => ({
           ...e,
@@ -1889,6 +1893,7 @@ function loadHealth() {
           kcal:     e.kcal !== null && e.kcal !== '' ? parseInt(e.kcal) : null,
           note:     e.note || '',
         }));
+        console.log('healthEntries mappati:', healthEntries.length);
         saveHealth();
         renderHealthSection();
       }
