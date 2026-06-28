@@ -702,8 +702,11 @@ canvas{max-height:160px}
 
 <script>
 const STORAGE_KEY = 'running_sessions_v2';
+const HEALTH_KEY = 'health_entries_v1';
 const SHEET_URL = 'https://script.google.com/macros/s/AKfycby-xpfesZW-BHzooxYs0un52hfhwkSvLlr0OyvkGd-kdEtM_nEM2fZNzeSoiAbFV25v/exec';
 let sessions = [];
+let healthEntries = [];
+let healthCharts = {};
 let syncEnabled = true;
 
 // today label
@@ -1859,10 +1862,6 @@ function goHome() {
 document.getElementById('health-today-label').textContent = now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
 
 // ===== HEALTH =====
-const HEALTH_KEY = 'health_entries_v1';
-let healthEntries = [];
-let healthCharts = {};
-
 function loadHealth() {
   // Carica subito da localStorage come fallback
   try {
