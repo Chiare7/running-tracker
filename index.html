@@ -1864,32 +1864,34 @@ let healthEntries = [];
 let healthCharts = {};
 
 function loadHealth() {
+  // Carica subito da localStorage come fallback
   try {
     const r = localStorage.getItem(HEALTH_KEY);
-    if (r) healthEntries = JSON.parse(r);
+    if (r) {
+      healthEntries = JSON.parse(r);
+      renderHealthSection();
+    }
   } catch(e) { healthEntries = []; }
 
-  if (!syncEnabled) return;
+  // Sempre aggiorna da Google Sheets (fonte di verità)
   fetchJSONP(SHEET_URL + '?action=getAllHealth')
     .then(data => {
-      console.log('Health data:', data);
       if (Array.isArray(data) && data.length > 0) {
         healthEntries = data.map(e => ({
           ...e,
           date:     parseDate(e.date),
-          peso:     parseFloat(e.peso)     || null,
+          peso:     e.peso !== null && e.peso !== '' ? parseFloat(e.peso) : null,
           sonno:    e.sonno || null,
-          deepPct:  parseFloat(e.deepPct)  || null,
-          hrv:      parseInt(e.hrv)        || null,
-          fcRiposo: parseInt(e.fcRiposo)   || null,
-          vo2max:   parseFloat(e.vo2max)   || null,
-          passi:    parseInt(e.passi)      || null,
-          kcal:     parseInt(e.kcal)       || null,
+          deepPct:  e.deepPct !== null && e.deepPct !== '' ? parseFloat(e.deepPct) : null,
+          hrv:      e.hrv !== null && e.hrv !== '' ? parseInt(e.hrv) : null,
+          fcRiposo: e.fcRiposo !== null && e.fcRiposo !== '' ? parseInt(e.fcRiposo) : null,
+          vo2max:   e.vo2max !== null && e.vo2max !== '' ? parseFloat(e.vo2max) : null,
+          passi:    e.passi !== null && e.passi !== '' ? parseInt(e.passi) : null,
+          kcal:     e.kcal !== null && e.kcal !== '' ? parseInt(e.kcal) : null,
           note:     e.note || '',
         }));
         saveHealth();
         renderHealthSection();
-        showToast('Dati aggiornati da Sheets ✓');
       }
     })
     .catch(err => { console.error('Health fetch error:', err); });
