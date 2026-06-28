@@ -1866,19 +1866,15 @@ function loadHealth() {
   // Carica subito da localStorage come fallback
   try {
     const r = localStorage.getItem(HEALTH_KEY);
-    console.log('localStorage HEALTH_KEY:', r);
     if (r) {
       healthEntries = JSON.parse(r);
-      console.log('healthEntries da localStorage:', healthEntries.length);
       renderHealthSection();
     }
   } catch(e) { healthEntries = []; }
 
   // Sempre aggiorna da Google Sheets (fonte di verità)
-  console.log('Avvio fetchJSONP Health...');
   fetchJSONP(SHEET_URL + '?action=getAllHealth')
     .then(data => {
-      console.log('Health data ricevuta:', data);
       if (Array.isArray(data) && data.length > 0) {
         healthEntries = data.map(e => ({
           ...e,
@@ -1893,7 +1889,6 @@ function loadHealth() {
           kcal:     e.kcal !== null && e.kcal !== '' ? parseInt(e.kcal) : null,
           note:     e.note || '',
         }));
-        console.log('healthEntries mappati:', healthEntries.length);
         saveHealth();
         renderHealthSection();
       }
@@ -2024,9 +2019,9 @@ function renderHealthSection() {
       const better = m.higherBetter === null ? null : (m.higherBetter ? diff > 0 : diff < 0);
       const cls = better === null ? 'neu' : better ? 'up' : 'down';
       const sign = diff > 0 ? '+' : '';
-      delta = `<div class="hm-delta ${cls}">${sign}${diff > 0 || diff < 0 ? (Number.isInteger(diff) ? diff : diff.toFixed(1)) : '—'} vs settimana scorsa</div>`;
+      delta = `<div class="hm-delta ${cls}">${sign}${diff > 0 || diff < 0 ? (Number.isInteger(diff) ? diff : Number(diff).toFixed(1)) : '—'} vs settimana scorsa</div>`;
     }
-    const display = val != null ? (Number.isInteger(val) ? val.toLocaleString('it-IT') : val.toFixed(1).replace('.',',')) : '—';
+    const display = val != null ? (Number.isInteger(Number(val)) ? Number(val).toLocaleString('it-IT') : Number(val).toFixed(1).replace('.',',')) : '—';
     return `<div class="health-metric-card">
       <div class="hm-label">${m.label}</div>
       <div class="hm-val">${display} <span class="hm-unit">${m.unit}</span></div>
@@ -2054,7 +2049,7 @@ function renderHealthSection() {
     if (el) {
       let displayVal;
       if (lastVal != null) {
-        displayVal = formatter ? formatter(lastVal) : (decimals ? lastVal.toFixed(1).replace('.',',') : lastVal);
+        displayVal = formatter ? formatter(lastVal) : (decimals ? Number(lastVal).toFixed(1).replace('.',',') : lastVal);
         el.textContent = displayVal + (unit ? ' '+unit : '');
       } else {
         el.textContent = '—';
