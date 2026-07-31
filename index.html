@@ -419,6 +419,22 @@ canvas{max-height:160px}
     <div class="chart-header"><div class="chart-title">Peso (kg) — media settimanale</div><div class="chart-latest" id="h-latest-peso">—</div></div>
     <canvas id="chartPeso" style="max-height:130px"></canvas>
   </div>
+  <div class="chart-card" style="margin-bottom:10px">
+    <div class="chart-header"><div class="chart-title">Deep Sleep (%) — media settimanale</div><div class="chart-latest" id="h-latest-deep">—</div></div>
+    <canvas id="chartDeep" style="max-height:130px"></canvas>
+  </div>
+  <div class="chart-card" style="margin-bottom:10px">
+    <div class="chart-header"><div class="chart-title">VO2Max — media settimanale</div><div class="chart-latest" id="h-latest-vo2">—</div></div>
+    <canvas id="chartVO2" style="max-height:130px"></canvas>
+  </div>
+  <div class="chart-card" style="margin-bottom:10px">
+    <div class="chart-header"><div class="chart-title">Passi — media settimanale</div><div class="chart-latest" id="h-latest-passi">—</div></div>
+    <canvas id="chartPassi" style="max-height:130px"></canvas>
+  </div>
+  <div class="chart-card" style="margin-bottom:10px">
+    <div class="chart-header"><div class="chart-title">Kcal — media settimanale</div><div class="chart-latest" id="h-latest-kcal">—</div></div>
+    <canvas id="chartKcal" style="max-height:130px"></canvas>
+  </div>
 
   <!-- LOG STORICO -->
   <div class="health-section-label">Storico settimanale</div>
@@ -2091,6 +2107,10 @@ function renderHealthSection() {
   buildHealthChart('chartFCriposo', 'h-latest-fc',    chronological.map(e=>e.fcRiposo), '#f55a5a', 'bpm', false);
   buildHealthChart('chartSonno',    'h-latest-sonno', chronological.map(e=>e.sonno),    '#c8f55a', 'h',   true, hoursToHHMM);
   buildHealthChart('chartPeso',     'h-latest-peso',  chronological.map(e=>e.peso),     '#f5c45a', 'kg',  true);
+  buildHealthChart('chartDeep',     'h-latest-deep',  chronological.map(e=>e.deepPct),  '#b45af5', '%',   false);
+  buildHealthChart('chartVO2',      'h-latest-vo2',   chronological.map(e=>e.vo2max),   '#5af5c8', '',    true);
+  buildHealthChart('chartPassi',    'h-latest-passi', chronological.map(e=>e.passi),    '#f5955a', '',    false);
+  buildHealthChart('chartKcal',     'h-latest-kcal',  chronological.map(e=>e.kcal),     '#f55a9a', 'kcal',false);
 
   // Log storico
   const logEl = document.getElementById('health-log-list');
