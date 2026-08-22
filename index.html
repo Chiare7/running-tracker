@@ -260,7 +260,20 @@ canvas{max-height:160px}
 .hm-delta.down{color:var(--red)}
 .hm-delta.neu{color:var(--muted)}
 .health-section-label{font-size:10px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;margin:1.5rem 0 0.75rem;padding-bottom:6px;border-bottom:0.5px solid var(--border)}
+.ab-checks{display:flex;flex-direction:column;gap:6px}
+.ab-check{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color 0.15s}
+.ab-check:hover{border-color:var(--accent)}
+.ab-check input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
+.ab-check span{font-size:13px;color:var(--text)}
+.ab-check.ab-negative input[type=checkbox]{accent-color:#f55a5a}
+.ab-check.ab-negative:hover{border-color:#f55a5a}
 .health-log-row{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:0.85rem 1rem;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start;gap:1rem}
+.ab-log-date{font-size:13px;font-weight:500;color:var(--text);margin-bottom:6px}
+.ab-log-chips{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:6px}
+.ab-chip{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
+.ab-chip.ok{background:rgba(90,180,90,0.15);color:#5ab45a}
+.ab-chip.ko{background:rgba(245,90,90,0.15);color:#f55a5a}
+.ab-chip.warn{background:rgba(245,180,90,0.15);color:#f5b45a}
 .hlr-date{font-size:12px;font-family:var(--font-display);color:var(--text)}
 .hlr-vals{display:flex;gap:12px;flex-wrap:wrap;justify-content:flex-end}
 .hlr-val{font-size:11px;font-family:var(--font-display);color:var(--muted);white-space:nowrap}
@@ -337,6 +350,18 @@ canvas{max-height:160px}
           <div>
             <div class="section-card-title">Forza & Mobilità</div>
             <div class="section-card-desc">Palestra, esercizi, progressioni</div>
+          </div>
+        </div>
+        <div class="section-card-arrow">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </div>
+      </div>
+      <div class="section-card" onclick="goSection('abitudini')">
+        <div class="section-card-left">
+          <div class="section-icon" style="background:rgba(168,85,247,0.15);font-size:22px">✅</div>
+          <div>
+            <div class="section-card-title">Abitudini</div>
+            <div class="section-card-desc">Checklist serale · aderenza settimanale</div>
           </div>
         </div>
         <div class="section-card-arrow">
@@ -451,6 +476,150 @@ canvas{max-height:160px}
     <div class="training-placeholder-icon">💪</div>
     <div class="training-placeholder-title">Forza & Mobilità</div>
     <div class="training-placeholder-sub">Questa sezione è in costruzione.<br>Presto potrai tracciare le tue sessioni in palestra, gli esercizi e le progressioni di carico.</div>
+  </div>
+</div>
+
+<!-- ABITUDINI -->
+<div id="section-abitudini" class="app-section">
+  <div class="header">
+    <div class="header-top">
+      <div class="logo">Abitudini</div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <button class="refresh-btn" onclick="loadAbitudini()" title="Aggiorna da Google Sheets">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 4v6h-6"/><path d="M1 20v-6h6"/>
+            <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+          </svg>
+        </button>
+        <button class="refresh-btn" onclick="goHome()" title="Home">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div style="padding:0 1rem 2rem">
+
+    <!-- ADERENZA SETTIMANALE -->
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:0.75rem">Aderenza media settimana corrente</div>
+      <div style="display:flex;align-items:center;gap:1rem">
+        <div id="ab-aderenza-pct" style="font-family:var(--font-display);font-size:42px;font-weight:600;color:var(--accent)">—</div>
+        <div>
+          <div id="ab-aderenza-label" style="font-size:12px;color:var(--muted)">Nessun dato questa settimana</div>
+          <div id="ab-aderenza-giorni" style="font-size:11px;color:var(--muted);margin-top:2px"></div>
+        </div>
+      </div>
+      <div style="margin-top:0.75rem;height:6px;background:var(--border);border-radius:3px;overflow:hidden">
+        <div id="ab-progress-bar" style="height:100%;background:var(--accent);border-radius:3px;width:0%;transition:width 0.6s ease"></div>
+      </div>
+    </div>
+
+    <!-- CHECKLIST OGGI -->
+    <div style="background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:1.25rem;margin-bottom:1rem">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+        <div>
+          <div style="font-size:13px;font-weight:500;color:var(--text)">Checklist serale</div>
+          <div id="ab-oggi-label" style="font-size:11px;color:var(--muted);margin-top:2px"></div>
+        </div>
+        <div id="ab-oggi-pct" style="font-family:var(--font-display);font-size:18px;font-weight:600;color:var(--accent)">0%</div>
+      </div>
+
+      <!-- MATTINA -->
+      <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem;margin-top:0.25rem">☀️ Mattina</div>
+      <div class="ab-checks">
+        <label class="ab-check"><input type="checkbox" id="ab-no-cellulare"><span>No cellulare 30min al risveglio</span></label>
+        <label class="ab-check"><input type="checkbox" id="ab-luce-solare"><span>Esposizione luce solare (10–15 min)</span></label>
+        <label class="ab-check"><input type="checkbox" id="ab-meditazione"><span>Meditazione</span></label>
+      </div>
+
+      <!-- GIORNO -->
+      <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem;margin-top:1rem">🏃 Giorno</div>
+      <div class="ab-checks">
+        <label class="ab-check"><input type="checkbox" id="ab-allenamento"><span>Allenamento fatto (corsa o palestra)</span></label>
+        <label class="ab-check"><input type="checkbox" id="ab-idratazione"><span>Idratazione adeguata (1.5–2L)</span></label>
+        <label class="ab-check ab-negative"><input type="checkbox" id="ab-alcol"><span>Alcol assunto ⚠️</span></label>
+        <label class="ab-check ab-negative"><input type="checkbox" id="ab-caffeina"><span>Caffeina dopo le 14:00 ⚠️</span></label>
+      </div>
+
+      <!-- SERA -->
+      <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:0.5rem;margin-top:1rem">🌙 Sera</div>
+      <div class="ab-checks">
+        <label class="ab-check"><input type="checkbox" id="ab-schermi-off"><span>Schermi off 1h prima di dormire</span></label>
+        <label class="ab-check"><input type="checkbox" id="ab-lettura"><span>Letto 10+ pagine</span></label>
+        <label class="ab-check"><input type="checkbox" id="ab-magnesio"><span>Magnesio bisglicinato + L-teanina</span></label>
+        <label class="ab-check"><input type="checkbox" id="ab-cena"><span>Cena entro le 20:00</span></label>
+      </div>
+
+      <!-- NOTE + SALVA -->
+      <div style="margin-top:1rem">
+        <label style="font-size:11px;color:var(--muted)">Note</label>
+        <textarea id="ab-note" placeholder="Come ti sei sentito oggi? Qualcosa da segnalare..." style="min-height:60px;resize:none;margin-top:4px"></textarea>
+      </div>
+      <button class="btn-save" onclick="saveAbitudini()" style="width:100%;margin-top:0.75rem">Salva checklist</button>
+    </div>
+
+    <!-- GRAFICI STORICI -->
+    <div class="health-section-label">Storico ultime 12 settimane</div>
+
+    <div class="chart-card" style="margin-bottom:10px">
+      <div class="chart-header"><div class="chart-title">Aderenza media settimanale (%)</div><div class="chart-latest" id="ab-chart-latest-aderenza">—</div></div>
+      <canvas id="ab-chart-aderenza" style="max-height:130px"></canvas>
+    </div>
+
+    <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin:1rem 0 0.5rem">☀️ Mattina</div>
+    <div class="chart-card" style="margin-bottom:10px">
+      <div class="chart-header"><div class="chart-title">No cellulare al risveglio</div><div class="chart-latest" id="ab-chart-latest-cellulare">—</div></div>
+      <canvas id="ab-chart-cellulare" style="max-height:100px"></canvas>
+    </div>
+    <div class="chart-card" style="margin-bottom:10px">
+      <div class="chart-header"><div class="chart-title">Luce solare</div><div class="chart-latest" id="ab-chart-latest-luce">—</div></div>
+      <canvas id="ab-chart-luce" style="max-height:100px"></canvas>
+    </div>
+    <div class="chart-card" style="margin-bottom:10px">
+      <div class="chart-header"><div class="chart-title">Meditazione</div><div class="chart-latest" id="ab-chart-latest-meditazione">—</div></div>
+      <canvas id="ab-chart-meditazione" style="max-height:100px"></canvas>
+    </div>
+
+    <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin:1rem 0 0.5rem">🏃 Giorno</div>
+    <div class="chart-card" style="margin-bottom:10px">
+      <div class="chart-header"><div class="chart-title">Allenamento</div><div class="chart-latest" id="ab-chart-latest-allenamento">—</div></div>
+      <canvas id="ab-chart-allenamento" style="max-height:100px"></canvas>
+    </div>
+    <div class="chart-card" style="margin-bottom:10px">
+      <div class="chart-header"><div class="chart-title">Idratazione</div><div class="chart-latest" id="ab-chart-latest-idratazione">—</div></div>
+      <canvas id="ab-chart-idratazione" style="max-height:100px"></canvas>
+    </div>
+    <div class="chart-card" style="margin-bottom:10px">
+      <div class="chart-header"><div class="chart-title">Alcol assunto ⚠️</div><div class="chart-latest" id="ab-chart-latest-alcol">—</div></div>
+      <canvas id="ab-chart-alcol" style="max-height:100px"></canvas>
+    </div>
+    <div class="chart-card" style="margin-bottom:10px">
+      <div class="chart-header"><div class="chart-title">Caffeina dopo le 14:00 ⚠️</div><div class="chart-latest" id="ab-chart-latest-caffeina">—</div></div>
+      <canvas id="ab-chart-caffeina" style="max-height:100px"></canvas>
+    </div>
+
+    <div style="font-size:10px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin:1rem 0 0.5rem">🌙 Sera</div>
+    <div class="chart-card" style="margin-bottom:10px">
+      <div class="chart-header"><div class="chart-title">Schermi off</div><div class="chart-latest" id="ab-chart-latest-schermi">—</div></div>
+      <canvas id="ab-chart-schermi" style="max-height:100px"></canvas>
+    </div>
+    <div class="chart-card" style="margin-bottom:10px">
+      <div class="chart-header"><div class="chart-title">Lettura</div><div class="chart-latest" id="ab-chart-latest-lettura">—</div></div>
+      <canvas id="ab-chart-lettura" style="max-height:100px"></canvas>
+    </div>
+    <div class="chart-card" style="margin-bottom:10px">
+      <div class="chart-header"><div class="chart-title">Magnesio + L-teanina</div><div class="chart-latest" id="ab-chart-latest-magnesio">—</div></div>
+      <canvas id="ab-chart-magnesio" style="max-height:100px"></canvas>
+    </div>
+    <div class="chart-card" style="margin-bottom:10px">
+      <div class="chart-header"><div class="chart-title">Cena entro le 20:00</div><div class="chart-latest" id="ab-chart-latest-cena">—</div></div>
+      <canvas id="ab-chart-cena" style="max-height:100px"></canvas>
+    </div>
+
+    <!-- STORICO GIORNALIERO -->
+    <div class="health-section-label" style="margin-top:1rem">Storico giornaliero</div>
+    <div id="ab-log"></div>
   </div>
 </div>
 
@@ -882,6 +1051,7 @@ function loadFromStorage() {
   if (sessions.length === 0) prefill();
   loadGoals();
   loadHealth();
+  loadAbitudini();
   render();
 
   // 2. Sincronizza da Google Sheets in background
@@ -1866,6 +2036,7 @@ function goSection(name) {
   window.scrollTo(0, 0);
   if (name === 'running') setTimeout(() => { populateYearFilter(); applyFilters(); }, 60);
   if (name === 'health') renderHealthSection();
+  if (name === 'abitudini') renderAbitudini();
 }
 
 function goHome() {
@@ -1924,7 +2095,7 @@ function addHealthEntry() {
     id: 'h' + Date.now(),
     date,
     peso:     parseFloat(document.getElementById('h-peso').value.replace(',','.'))    || null,
-    sonno:    (() => { const v = document.getElementById('h-sonno').value.trim(); if (!v) return null; if (v.includes(':')) { const [h,m] = v.split(':'); return parseFloat(h) + parseInt(m)/60; } return parseFloat(v.replace(',','.')) || null; })(),
+    sonno:    (() => { const v = document.getElementById('h-sonno').value.trim(); if (!v) return null; if (v.includes(':')) { const [h,m] = v.split(':'); return Math.round((parseFloat(h) + parseInt(m)/60) * 100) / 100; } return parseFloat(v.replace(',','.')) || null; })(),
     deepPct:  parseFloat(document.getElementById('h-deep-pct').value.replace(',','.'))|| null,
     hrv:      parseInt(document.getElementById('h-hrv').value)       || null,
     fcRiposo: parseInt(document.getElementById('h-fc-riposo').value) || null,
@@ -2200,6 +2371,285 @@ function logout() {
   document.getElementById('section-login').classList.add('active');
   window.scrollTo(0, 0);
 }
+
+
+// ===== ABITUDINI =====
+const ABITUDINI_KEY = 'abitudini_v1';
+let abitudiniEntries = [];
+let abitudiniCharts = {};
+
+const AB_ITEMS = [
+  { id:'no_cellulare',  label:'No cellulare al risveglio', group:'mattina',  negative:false },
+  { id:'luce_solare',   label:'Luce solare',               group:'mattina',  negative:false },
+  { id:'meditazione',   label:'Meditazione',               group:'mattina',  negative:false },
+  { id:'allenamento',   label:'Allenamento',               group:'giorno',   negative:false },
+  { id:'idratazione',   label:'Idratazione adeguata',      group:'giorno',   negative:false },
+  { id:'alcol',         label:'Alcol assunto',             group:'giorno',   negative:true  },
+  { id:'caffeina',      label:'Caffeina dopo 14:00',       group:'giorno',   negative:true  },
+  { id:'schermi_off',   label:'Schermi off',               group:'sera',     negative:false },
+  { id:'lettura',       label:'Lettura',                   group:'sera',     negative:false },
+  { id:'magnesio',      label:'Magnesio + L-teanina',      group:'sera',     negative:false },
+  { id:'cena',          label:'Cena entro 20:00',          group:'sera',     negative:false },
+];
+
+function calcAderenza(entry) {
+  let ok = 0;
+  AB_ITEMS.forEach(item => {
+    const val = entry.dati[item.id];
+    if (item.negative) { if (!val) ok++; } else { if (val) ok++; }
+  });
+  return Math.round((ok / AB_ITEMS.length) * 100);
+}
+
+function getWeekKey(dateStr) {
+  const d = new Date(dateStr);
+  const day = d.getDay() === 0 ? 7 : d.getDay();
+  const mon = new Date(d); mon.setDate(d.getDate() - day + 1);
+  return mon.toISOString().slice(0,10);
+}
+
+function loadAbitudini() {
+  try {
+    const r = localStorage.getItem(ABITUDINI_KEY);
+    if (r) { abitudiniEntries = JSON.parse(r); renderAbitudini(); }
+  } catch(e) { abitudiniEntries = []; }
+
+  fetchJSONP(SHEET_URL + '?action=getAllAbitudini')
+    .then(data => {
+      if (Array.isArray(data) && data.length > 0) {
+        abitudiniEntries = data.map(e => ({
+          ...e,
+          date: parseDate(e.date),
+          dati: typeof e.dati === 'string' ? JSON.parse(e.dati) : e.dati,
+          aderenza: parseInt(e.aderenza) || 0,
+        }));
+        localStorage.setItem(ABITUDINI_KEY, JSON.stringify(abitudiniEntries));
+        renderAbitudini();
+        showToast('Abitudini aggiornate ✓');
+      }
+    })
+    .catch(() => {});
+}
+
+function saveAbitudini() {
+  const today = new Date().toISOString().slice(0,10);
+  const dati = {
+    no_cellulare: document.getElementById('ab-no-cellulare').checked,
+    luce_solare:  document.getElementById('ab-luce-solare').checked,
+    meditazione:  document.getElementById('ab-meditazione').checked,
+    allenamento:  document.getElementById('ab-allenamento').checked,
+    idratazione:  document.getElementById('ab-idratazione').checked,
+    alcol:        document.getElementById('ab-alcol').checked,
+    caffeina:     document.getElementById('ab-caffeina').checked,
+    schermi_off:  document.getElementById('ab-schermi-off').checked,
+    lettura:      document.getElementById('ab-lettura').checked,
+    magnesio:     document.getElementById('ab-magnesio').checked,
+    cena:         document.getElementById('ab-cena').checked,
+  };
+  const note = document.getElementById('ab-note').value.trim();
+  const entry = {
+    id: 'ab' + Date.now(),
+    date: today,
+    dati,
+    aderenza: calcAderenza({ dati }),
+    note,
+  };
+
+  // Rimuovi eventuale entry dello stesso giorno
+  abitudiniEntries = abitudiniEntries.filter(e => e.date !== today);
+  abitudiniEntries.push(entry);
+  localStorage.setItem(ABITUDINI_KEY, JSON.stringify(abitudiniEntries));
+  renderAbitudini();
+  showToast('Checklist salvata ✓');
+
+  // Sync Google Sheets
+  showSyncStatus('Salvataggio su Sheets…', 'loading');
+  const datiStr = JSON.stringify(dati);
+  const params = new URLSearchParams({
+    action: 'addAbitudini',
+    id: entry.id,
+    date: entry.date,
+    dato: datiStr,
+    aderenza: entry.aderenza,
+    note: note,
+  });
+  fetch(SHEET_URL + '?' + params.toString(), {cache:'no-store'})
+    .then(() => { showSyncStatus('Salvato su Sheets ✓', 'ok'); setTimeout(() => showSyncStatus('',''), 3000); })
+    .catch(() => showSyncStatus('Salvato solo in locale', 'warn'));
+}
+
+function updateChecklistCounter() {
+  const checks = document.querySelectorAll('#section-abitudini input[type=checkbox]');
+  let ok = 0;
+  AB_ITEMS.forEach(item => {
+    const el = document.getElementById('ab-' + item.id.replace('_','-'));
+    if (!el) return;
+    if (item.negative) { if (!el.checked) ok++; } else { if (el.checked) ok++; }
+  });
+  const pct = Math.round((ok / AB_ITEMS.length) * 100);
+  const el = document.getElementById('ab-oggi-pct');
+  if (el) el.textContent = pct + '%';
+}
+
+function renderAbitudini() {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('ab-oggi-label').textContent = new Date().toLocaleDateString('it-IT',{weekday:'long', day:'numeric', month:'long'});
+
+  // Precompila checklist se esiste entry di oggi
+  const todayEntry = abitudiniEntries.find(e => e.date === today);
+  if (todayEntry) {
+    AB_ITEMS.forEach(item => {
+      const el = document.getElementById('ab-' + item.id.replace(/_/g,'-'));
+      if (el) el.checked = !!todayEntry.dati[item.id];
+    });
+    document.getElementById('ab-note').value = todayEntry.note || '';
+  }
+
+  // Aggiorna counter live
+  document.querySelectorAll('#section-abitudini input[type=checkbox]').forEach(cb => {
+    cb.removeEventListener('change', updateChecklistCounter);
+    cb.addEventListener('change', updateChecklistCounter);
+  });
+  updateChecklistCounter();
+
+  // Calcola aderenza settimana corrente
+  const weekKey = getWeekKey(today);
+  const thisWeek = abitudiniEntries.filter(e => getWeekKey(e.date) === weekKey);
+  if (thisWeek.length > 0) {
+    const avg = Math.round(thisWeek.reduce((s,e) => s + e.aderenza, 0) / thisWeek.length);
+    document.getElementById('ab-aderenza-pct').textContent = avg + '%';
+    document.getElementById('ab-aderenza-label').textContent = avg >= 80 ? '🟢 Ottima settimana!' : avg >= 60 ? '🟡 Buona settimana' : '🔴 Settimana difficile';
+    document.getElementById('ab-aderenza-giorni').textContent = thisWeek.length + ' giorn' + (thisWeek.length === 1 ? 'o' : 'i') + ' registrat' + (thisWeek.length === 1 ? 'o' : 'i');
+    document.getElementById('ab-progress-bar').style.width = avg + '%';
+    document.getElementById('ab-progress-bar').style.background = avg >= 80 ? '#5ab45a' : avg >= 60 ? '#f5c45a' : '#f55a5a';
+  } else {
+    document.getElementById('ab-aderenza-pct').textContent = '—';
+    document.getElementById('ab-aderenza-label').textContent = 'Nessun dato questa settimana';
+    document.getElementById('ab-aderenza-giorni').textContent = '';
+    document.getElementById('ab-progress-bar').style.width = '0%';
+  }
+
+  // Grafici — ultime 12 settimane
+  const sorted = [...abitudiniEntries].sort((a,b) => a.date.localeCompare(b.date));
+  
+  // Raggruppa per settimana
+  const weekMap = {};
+  sorted.forEach(e => {
+    const wk = getWeekKey(e.date);
+    if (!weekMap[wk]) weekMap[wk] = [];
+    weekMap[wk].push(e);
+  });
+  const weeks = Object.keys(weekMap).sort().slice(-12);
+  const weekLabels = weeks.map(wk => {
+    const d = new Date(wk);
+    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+  });
+
+  // Grafico aderenza media settimanale
+  const aderenzaData = weeks.map(wk => {
+    const entries = weekMap[wk];
+    return Math.round(entries.reduce((s,e) => s + e.aderenza, 0) / entries.length);
+  });
+  buildAbChart('ab-chart-aderenza', 'ab-chart-latest-aderenza', weekLabels, aderenzaData, '#a855f7', '%');
+
+  // Grafici per singola abitudine (% giorni ok per settimana)
+  const abChartMap = {
+    'cellulare':   'no_cellulare',
+    'luce':        'luce_solare',
+    'meditazione': 'meditazione',
+    'allenamento': 'allenamento',
+    'idratazione': 'idratazione',
+    'alcol':       'alcol',
+    'caffeina':    'caffeina',
+    'schermi':     'schermi_off',
+    'lettura':     'lettura',
+    'magnesio':    'magnesio',
+    'cena':        'cena',
+  };
+  const abColors = {
+    'cellulare':'#5ab4f5','luce':'#f5c45a','meditazione':'#c8f55a',
+    'allenamento':'#5af5c8','idratazione':'#5ab4f5','alcol':'#f55a5a',
+    'caffeina':'#f5955a','schermi':'#b45af5','lettura':'#f55ab4',
+    'magnesio':'#5af5f5','cena':'#f5f55a',
+  };
+
+  Object.entries(abChartMap).forEach(([chartKey, itemId]) => {
+    const item = AB_ITEMS.find(i => i.id === itemId);
+    const data = weeks.map(wk => {
+      const entries = weekMap[wk];
+      const okCount = entries.filter(e => {
+        const val = e.dati[itemId];
+        return item.negative ? !val : !!val;
+      }).length;
+      return Math.round((okCount / entries.length) * 100);
+    });
+    buildAbChart('ab-chart-' + chartKey, 'ab-chart-latest-' + chartKey, weekLabels, data, abColors[chartKey], '%');
+  });
+
+  // Log storico
+  renderAbLog(sorted);
+}
+
+function buildAbChart(canvasId, latestId, labels, data, color, unit) {
+  if (abitudiniCharts[canvasId]) { abitudiniCharts[canvasId].destroy(); delete abitudiniCharts[canvasId]; }
+  const latestEl = document.getElementById(latestId);
+  if (latestEl) {
+    const last = data.filter(v => v != null);
+    latestEl.textContent = last.length ? last[last.length-1] + (unit||'') : '—';
+  }
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  abitudiniCharts[canvasId] = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data,
+        backgroundColor: color + '80',
+        borderColor: color,
+        borderWidth: 1.5,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: true,
+      plugins: { legend:{display:false}, tooltip:{
+        backgroundColor:'#1e2126', borderColor:'#2a2d34', borderWidth:1,
+        titleColor:'#6b7280', bodyColor:'#f0f2f0',
+        titleFont:{family:'DM Mono',size:10}, bodyFont:{family:'DM Mono',size:12},
+        callbacks:{ label: ctx => ctx.parsed.y + (unit||'') }
+      }},
+      scales: {
+        x:{ ticks:{color:'#6b7280',font:{family:'DM Mono',size:9}}, grid:{color:'#1e2126'} },
+        y:{ min:0, max:100, ticks:{color:'#6b7280',font:{family:'DM Mono',size:10}, callback: v => v+(unit||'')}, grid:{color:'#1e2126'} }
+      }
+    }
+  });
+}
+
+function renderAbLog(sorted) {
+  const logEl = document.getElementById('ab-log');
+  if (!logEl) return;
+  const entries = [...sorted].reverse();
+  if (!entries.length) { logEl.innerHTML = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:2rem">Nessuna checklist ancora</div>'; return; }
+  logEl.innerHTML = entries.map(e => {
+    const chips = AB_ITEMS.map(item => {
+      const val = e.dati[item.id];
+      const ok = item.negative ? !val : !!val;
+      return `<span class="ab-chip ${ok ? 'ok' : item.negative && val ? 'warn' : 'ko'}">${item.label}</span>`;
+    }).join('');
+    return `<div class="ab-log-row">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div class="ab-log-date">${formatDateItalian(e.date)}</div>
+        <div style="font-family:var(--font-display);font-size:15px;font-weight:600;color:${e.aderenza>=80?'#5ab45a':e.aderenza>=60?'#f5c45a':'#f55a5a'}">${e.aderenza}%</div>
+      </div>
+      <div class="ab-log-chips">${chips}</div>
+      ${e.note ? `<div style="font-size:11px;color:var(--muted);padding-top:6px;border-top:0.5px solid var(--border);margin-top:4px">📝 ${e.note}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+// ===== END ABITUDINI =====
 
 // Inizializza login al caricamento
 initLogin();
