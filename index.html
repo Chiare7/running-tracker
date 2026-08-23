@@ -1086,10 +1086,7 @@ function loadFromStorage() {
 async function pushAllToSheet() {
   for (const s of sessions) {
     try {
-      await fetch(SHEET_URL, {
-        method:'POST',
-        body: JSON.stringify({action:'add', session:s})
-      });
+      await fetchJSONP(SHEET_URL + '?action=add&' + new URLSearchParams(s).toString());
     } catch(e) {}
   }
 }
@@ -1105,20 +1102,15 @@ async function saveToStorage() {
 async function saveSessionToSheet(s) {
   if (!syncEnabled) return;
   try {
-    await fetch(SHEET_URL, {
-      method: 'POST',
-      body: JSON.stringify({action:'add', session:s})
-    });
+    const params = new URLSearchParams({action:'add',...Object.fromEntries(Object.entries(s).map(([k,v])=>[k,v??'']))});
+    await fetchJSONP(SHEET_URL + '?' + params.toString());
   } catch(e) { showSyncStatus('Errore sync', 'warn'); }
 }
 
 async function deleteSessionFromSheet(id) {
   if (!syncEnabled) return;
   try {
-    await fetch(SHEET_URL, {
-      method: 'POST',
-      body: JSON.stringify({action:'delete', id})
-    });
+    await fetchJSONP(SHEET_URL + '?action=delete&id=' + id);
   } catch(e) {}
 }
 
@@ -2125,7 +2117,7 @@ function addHealthEntry() {
     vo2max: entry.vo2max||'', passi: entry.passi||'', kcal: entry.kcal||'',
     note: entry.note||''
   });
-  fetch(SHEET_URL + '?' + params.toString(), {cache: 'no-store'})
+  fetchJSONP(SHEET_URL + '?' + params.toString())
     .then(() => {
       showSyncStatus('Salvato su Sheets ✓', 'ok');
       setTimeout(() => showSyncStatus('', ''), 3000);
@@ -2140,8 +2132,7 @@ function deleteHealthEntry(id) {
   renderHealthSection();
   showToast('Misurazione eliminata');
 
-  // Sync delete to Google Sheets
-  fetch(SHEET_URL + '?action=deleteHealth&id=' + id, {cache: 'no-store'})
+  fetchJSONP(SHEET_URL + '?action=deleteHealth&id=' + id)
     .catch(() => {});
 }
 
@@ -2462,18 +2453,10 @@ function saveAbitudini() {
   renderAbitudini();
   showToast('Checklist salvata ✓');
 
-  // Sync Google Sheets
+  // Sync Google Sheets via JSONP
   showSyncStatus('Salvataggio su Sheets…', 'loading');
-  const datiStr = JSON.stringify(dati);
-  const params = new URLSearchParams({
-    action: 'addAbitudini',
-    id: entry.id,
-    date: entry.date,
-    dato: datiStr,
-    aderenza: entry.aderenza,
-    note: note,
-  });
-  fetch(SHEET_URL + '?' + params.toString(), {cache:'no-store'})
+  const datiStr = encodeURIComponent(JSON.stringify(dati));
+  fetchJSONP(`${SHEET_URL}?action=addAbitudini&id=${entry.id}&date=${entry.date}&dato=${datiStr}&aderenza=${entry.aderenza}&note=${encodeURIComponent(note)}`)
     .then(() => { showSyncStatus('Salvato su Sheets ✓', 'ok'); setTimeout(() => showSyncStatus('',''), 3000); })
     .catch(() => showSyncStatus('Salvato solo in locale', 'warn'));
 }
