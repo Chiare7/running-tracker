@@ -260,7 +260,23 @@ canvas{max-height:160px}
 .hm-delta.down{color:var(--red)}
 .hm-delta.neu{color:var(--muted)}
 .health-section-label{font-size:10px;color:var(--muted);font-family:var(--font-display);letter-spacing:0.1em;text-transform:uppercase;margin:1.5rem 0 0.75rem;padding-bottom:6px;border-bottom:0.5px solid var(--border)}
-.ab-checks{display:flex;flex-direction:column;gap:6px}
+.corr-week-row{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:1rem;margin-bottom:8px}
+.corr-week-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem}
+.corr-week-period{font-size:12px;font-weight:500;color:var(--text)}
+.corr-week-aderenza{font-family:var(--font-display);font-size:16px;font-weight:600}
+.corr-metrics-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.corr-metric{background:var(--bg);border-radius:6px;padding:6px 8px;font-size:11px}
+.corr-metric-label{color:var(--muted);margin-bottom:2px}
+.corr-metric-val{font-weight:600;color:var(--text)}
+.corr-habits-row{display:flex;flex-wrap:wrap;gap:4px;margin-top:0.5rem;padding-top:0.5rem;border-top:0.5px solid var(--border)}
+.corr-stat-row{background:var(--surface);border:0.5px solid var(--border);border-radius:10px;padding:0.85rem 1rem;margin-bottom:6px}
+.corr-stat-header{font-size:12px;font-weight:500;color:var(--text);margin-bottom:8px}
+.corr-stat-item{display:flex;align-items:center;gap:8px;margin-bottom:5px;font-size:11px}
+.corr-stat-label{color:var(--muted);width:160px;flex-shrink:0}
+.corr-stat-bar-wrap{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.corr-stat-bar{height:100%;border-radius:3px;transition:width 0.5s ease}
+.corr-stat-val{font-family:var(--font-display);font-size:11px;font-weight:600;width:40px;text-align:right}
+.corr-empty{color:var(--muted);font-size:13px;text-align:center;padding:1.5rem;background:var(--surface);border-radius:10px;border:0.5px solid var(--border)}
 .ab-check{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;cursor:pointer;transition:border-color 0.15s}
 .ab-check:hover{border-color:var(--accent)}
 .ab-check input[type=checkbox]{width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex-shrink:0}
@@ -409,18 +425,19 @@ canvas{max-height:160px}
   <div class="health-add-wrap">
     <div class="health-add-title">+ Aggiungi misurazione</div>
     <div style="font-size:11px;color:var(--muted);margin-bottom:1rem;padding:0.75rem;background:var(--bg);border-radius:8px;border-left:2px solid var(--accent)">
-      ℹ️ I dati rappresentano la <strong>media della settimana</strong> che va dai 7 giorni precedenti alla data inserita (inclusa).
+      ℹ️ Inserisci il <strong>periodo di riferimento</strong> (DA → A) e le medie della settimana.
     </div>
     <div class="health-form-grid">
-      <div class="field"><label>Data</label><input id="h-date" type="date"></div>
+      <div class="field"><label>Data DA</label><input id="h-date-from" type="date"></div>
+      <div class="field"><label>Data A</label><input id="h-date" type="date"></div>
       <div class="field"><label>Peso (kg)</label><input id="h-peso" type="text" inputmode="decimal" placeholder="75,5"></div>
       <div class="field"><label>Ore sonno</label><input id="h-sonno" type="text" inputmode="decimal" placeholder="7:30"></div>
       <div class="field"><label>Deep Sleep (%)</label><input id="h-deep-pct" type="text" inputmode="decimal" placeholder="18"></div>
       <div class="field"><label>HRV (ms)</label><input id="h-hrv" type="number" placeholder="55"></div>
       <div class="field"><label>FC riposo (bpm)</label><input id="h-fc-riposo" type="number" placeholder="52"></div>
       <div class="field"><label>VO2Max</label><input id="h-vo2" type="text" inputmode="decimal" placeholder="48,5"></div>
-      <div class="field"><label>Passi (ieri)</label><input id="h-passi" type="number" placeholder="8500"></div>
-      <div class="field"><label>Kcal (ieri)</label><input id="h-kcal" type="number" placeholder="2200"></div>
+      <div class="field"><label>Passi</label><input id="h-passi" type="number" placeholder="8500"></div>
+      <div class="field"><label>Kcal</label><input id="h-kcal" type="number" placeholder="2200"></div>
       <div style="grid-column:1/-1"><label>Note</label><textarea id="h-note" placeholder="Es: scarso sonno, stress, malattia..." style="min-height:60px;resize:none"></textarea></div>
     </div>
     <button class="btn-save" onclick="addHealthEntry()">Salva misurazione</button>
@@ -464,6 +481,16 @@ canvas{max-height:160px}
   <!-- LOG STORICO -->
   <div class="health-section-label">Storico settimanale</div>
   <div id="health-log-list"></div>
+
+  <!-- CORRELAZIONE A — Visiva -->
+  <div class="health-section-label" style="margin-top:1.5rem">Correlazione Health × Abitudini</div>
+  <div id="health-corr-visual"></div>
+
+  <!-- CORRELAZIONE B — Statistica -->
+  <div class="health-section-label" style="margin-top:1.5rem">Impatto abitudini sulle metriche</div>
+  <div style="font-size:11px;color:var(--muted);margin-bottom:0.75rem">Correlazione di Pearson — richiede almeno 6 settimane di dati per essere significativa.</div>
+  <div id="health-corr-stats"></div>
+
 </div>
 
 <!-- FORZA & MOBILITÀ -->
@@ -899,6 +926,9 @@ const now = new Date();
 document.getElementById('today-label').textContent = now.toLocaleDateString('it-IT',{weekday:'long',day:'numeric',month:'long'});
 document.getElementById('f-date').value = now.toISOString().slice(0,10);
 document.getElementById('h-date').value = now.toISOString().slice(0,10);
+// Data DA = 7 giorni prima
+const dateFrom = new Date(now); dateFrom.setDate(now.getDate() - 7);
+document.getElementById('h-date-from').value = dateFrom.toISOString().slice(0,10);
 
 function showSyncStatus(msg, type) {
   const el = document.getElementById('sync-status');
@@ -2058,6 +2088,7 @@ function loadHealth() {
         healthEntries = data.map(e => ({
           ...e,
           date:     parseDate(e.date),
+          dateFrom: parseDate(e.dateFrom || ''),
           peso:     e.peso !== null && e.peso !== '' ? parseFloat(e.peso) : null,
           sonno:    (() => { const v = e.sonno; if (!v) return null; const s = String(v); if (s.includes(':')) { const [h,m] = s.split(':'); return parseFloat(h) + parseInt(m)/60; } return parseFloat(s) || null; })(),
           deepPct:  e.deepPct !== null && e.deepPct !== '' ? parseFloat(e.deepPct) : null,
@@ -2080,12 +2111,15 @@ function saveHealth() {
 }
 
 function addHealthEntry() {
-  const date = document.getElementById('h-date').value;
-  if (!date) { showToast('Inserisci la data'); return; }
+  const date     = document.getElementById('h-date').value;
+  const dateFrom = document.getElementById('h-date-from').value;
+  if (!date) { showToast('Inserisci la data A'); return; }
+  if (!dateFrom) { showToast('Inserisci la data DA'); return; }
 
   const entry = {
     id: 'h' + Date.now(),
     date,
+    dateFrom,
     peso:     parseFloat(document.getElementById('h-peso').value.replace(',','.'))    || null,
     sonno:    (() => { const v = document.getElementById('h-sonno').value.trim(); if (!v) return null; if (v.includes(':')) { const [h,m] = v.split(':'); return Math.round((parseFloat(h) + parseInt(m)/60) * 100) / 100; } return parseFloat(v.replace(',','.')) || null; })(),
     deepPct:  parseFloat(document.getElementById('h-deep-pct').value.replace(',','.'))|| null,
@@ -2103,7 +2137,7 @@ function addHealthEntry() {
   renderHealthSection();
 
   // Clear form
-  ['h-peso','h-sonno','h-deep-pct','h-hrv','h-fc-riposo','h-vo2','h-passi','h-kcal','h-note'].forEach(id => document.getElementById(id).value = '');
+  ['h-date-from','h-peso','h-sonno','h-deep-pct','h-hrv','h-fc-riposo','h-vo2','h-passi','h-kcal','h-note'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('h-date').value = new Date().toISOString().slice(0,10);
   showToast('Misurazione salvata ✓');
 
@@ -2111,7 +2145,9 @@ function addHealthEntry() {
   showSyncStatus('Salvataggio su Sheets…', 'loading');
   const params = new URLSearchParams({
     action: 'addHealth',
-    id: entry.id, date: entry.date,
+    id: entry.id,
+    dateFrom: entry.dateFrom || '',
+    date: entry.date,
     peso: entry.peso||'', sonno: entry.sonno||'', deepPct: entry.deepPct||'',
     hrv: entry.hrv||'', fcRiposo: entry.fcRiposo||'',
     vo2max: entry.vo2max||'', passi: entry.passi||'', kcal: entry.kcal||'',
@@ -2283,7 +2319,7 @@ function renderHealthSection() {
   logEl.innerHTML = sorted.map(e => `
     <div class="health-log-row">
       <div style="flex:1;display:flex;gap:1.5rem;align-items:center;font-size:12px;flex-wrap:wrap">
-        <div style="font-weight:500;color:var(--text);min-width:150px">${formatDateItalian(e.date)}</div>
+        <div style="font-weight:500;color:var(--text);min-width:150px">${e.dateFrom ? formatDateItalian(e.dateFrom) + ' → ' + formatDateItalian(e.date) : formatDateItalian(e.date)}</div>
         <div style="display:flex;gap:1.5rem;flex-wrap:wrap;flex:1">
           ${e.peso     != null ? `<div><span style="color:var(--muted)">Peso</span> <span style="color:var(--text);font-weight:500">${String(e.peso).replace('.',',')} kg</span></div>` : ''}
           ${e.sonno    != null ? `<div><span style="color:var(--muted)">Sonno</span> <span style="color:var(--text);font-weight:500">${hoursToHHMM(e.sonno)}</span></div>` : ''}
@@ -2298,6 +2334,169 @@ function renderHealthSection() {
       </div>
       <button class="del-btn" onclick="deleteHealthEntry('${e.id}')" style="flex-shrink:0">✕</button>
     </div>`).join('');
+
+  // Correlazioni
+  renderCorrVisual();
+  renderCorrStats();
+}
+
+// ===== CORRELAZIONE A — Visiva =====
+function renderCorrVisual() {
+  const el = document.getElementById('health-corr-visual');
+  if (!el) return;
+
+  // Abbina ogni entry Health alle abitudini della stessa settimana (dateFrom→date)
+  const pairs = healthEntries.map(h => {
+    if (!h.dateFrom || !h.date) return null;
+    // Trova abitudini che cadono nel range dateFrom→date
+    const abEntries = abitudiniEntries.filter(a => a.date >= h.dateFrom && a.date <= h.date);
+    if (!abEntries.length) return null;
+    const avgAderenza = Math.round(abEntries.reduce((s,a) => s + a.aderenza, 0) / abEntries.length);
+    // Calcola % per ogni singola abitudine
+    const abByItem = {};
+    AB_ITEMS.forEach(item => {
+      const okCount = abEntries.filter(a => {
+        const val = a.dati[item.id];
+        return item.negative ? !val : !!val;
+      }).length;
+      abByItem[item.id] = Math.round((okCount / abEntries.length) * 100);
+    });
+    return { h, abEntries, avgAderenza, abByItem };
+  }).filter(Boolean).sort((a,b) => b.h.date.localeCompare(a.h.date));
+
+  if (!pairs.length) {
+    el.innerHTML = '<div class="corr-empty">Nessuna settimana con dati sia Health che Abitudini.<br>Compila entrambe le sezioni per vedere la correlazione.</div>';
+    return;
+  }
+
+  const HEALTH_METRICS = [
+    { key:'hrv',      label:'HRV',      unit:'ms',  higherBetter:true },
+    { key:'fcRiposo', label:'FC riposo', unit:'bpm', higherBetter:false },
+    { key:'sonno',    label:'Sonno',     unit:'h',   higherBetter:true },
+    { key:'deepPct',  label:'Deep Sleep',unit:'%',   higherBetter:true },
+    { key:'vo2max',   label:'VO2Max',    unit:'',    higherBetter:true },
+  ];
+
+  el.innerHTML = pairs.map(({ h, avgAderenza, abByItem }) => {
+    const aderenzaColor = avgAderenza >= 80 ? '#5ab45a' : avgAderenza >= 60 ? '#f5c45a' : '#f55a5a';
+    const metricsHtml = HEALTH_METRICS.map(m => {
+      const val = h[m.key];
+      if (val == null) return '';
+      const display = m.key === 'sonno' ? hoursToHHMM(val) : (Number.isInteger(val) ? val : Number(val).toFixed(1).replace('.',','));
+      return `<div class="corr-metric">
+        <div class="corr-metric-label">${m.label}</div>
+        <div class="corr-metric-val">${display}${m.unit ? ' '+m.unit : ''}</div>
+      </div>`;
+    }).join('');
+
+    const chipsHtml = AB_ITEMS.map(item => {
+      const pct = abByItem[item.id];
+      const ok = pct >= 70;
+      return `<span class="ab-chip ${ok ? 'ok' : 'ko'}" title="${item.label}: ${pct}%">${item.label} ${pct}%</span>`;
+    }).join('');
+
+    return `<div class="corr-week-row">
+      <div class="corr-week-header">
+        <div class="corr-week-period">${formatDateItalian(h.dateFrom)} → ${formatDateItalian(h.date)}</div>
+        <div class="corr-week-aderenza" style="color:${aderenzaColor}">${avgAderenza}% aderenza</div>
+      </div>
+      <div class="corr-metrics-grid">${metricsHtml}</div>
+      <div class="corr-habits-row">${chipsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+// ===== CORRELAZIONE B — Pearson =====
+function pearson(x, y) {
+  const n = x.length;
+  if (n < 3) return null;
+  const mx = x.reduce((a,b)=>a+b,0)/n;
+  const my = y.reduce((a,b)=>a+b,0)/n;
+  const num = x.reduce((s,xi,i) => s + (xi-mx)*(y[i]-my), 0);
+  const den = Math.sqrt(x.reduce((s,xi)=>s+(xi-mx)**2,0) * y.reduce((s,yi)=>s+(yi-my)**2,0));
+  return den === 0 ? 0 : num/den;
+}
+
+function renderCorrStats() {
+  const el = document.getElementById('health-corr-stats');
+  if (!el) return;
+
+  // Costruisce coppie settimana allineate
+  const pairs = healthEntries.map(h => {
+    if (!h.dateFrom || !h.date) return null;
+    const abEntries = abitudiniEntries.filter(a => a.date >= h.dateFrom && a.date <= h.date);
+    if (!abEntries.length) return null;
+    const abByItem = {};
+    AB_ITEMS.forEach(item => {
+      const okCount = abEntries.filter(a => {
+        const val = a.dati[item.id];
+        return item.negative ? !val : !!val;
+      }).length;
+      abByItem[item.id] = okCount / abEntries.length;
+    });
+    return { h, abByItem };
+  }).filter(Boolean);
+
+  if (pairs.length < 3) {
+    el.innerHTML = '<div class="corr-empty">Servono almeno 3 settimane con dati sia Health che Abitudini per calcolare le correlazioni.</div>';
+    return;
+  }
+
+  const HEALTH_METRICS = [
+    { key:'hrv',      label:'HRV',       higherBetter:true  },
+    { key:'fcRiposo', label:'FC riposo',  higherBetter:false },
+    { key:'sonno',    label:'Ore sonno',  higherBetter:true  },
+    { key:'deepPct',  label:'Deep Sleep', higherBetter:true  },
+    { key:'vo2max',   label:'VO2Max',     higherBetter:true  },
+  ];
+
+  const html = HEALTH_METRICS.map(metric => {
+    // Filtra solo le settimane con valore per questa metrica
+    const filtered = pairs.filter(p => p.h[metric.key] != null);
+    if (filtered.length < 3) return '';
+
+    const metricVals = filtered.map(p => Number(p.h[metric.key]));
+
+    const corrs = AB_ITEMS.map(item => {
+      const habVals = filtered.map(p => p.abByItem[item.id]);
+      const r = pearson(habVals, metricVals);
+      return { item, r };
+    }).filter(c => c.r !== null)
+      .sort((a,b) => Math.abs(b.r) - Math.abs(a.r));
+
+    const itemsHtml = corrs.map(({ item, r }) => {
+      const rAbs = Math.abs(r);
+      const positive = metric.higherBetter ? r > 0 : r < 0;
+      const color = rAbs < 0.3 ? '#6b7280' : positive ? '#5ab45a' : '#f55a5a';
+      const barWidth = Math.round(rAbs * 100);
+      const sign = r > 0 ? '+' : '';
+      return `<div class="corr-stat-item">
+        <div class="corr-stat-label">${item.label}</div>
+        <div class="corr-stat-bar-wrap">
+          <div class="corr-stat-bar" style="width:${barWidth}%;background:${color}"></div>
+        </div>
+        <div class="corr-stat-val" style="color:${color}">${sign}${r.toFixed(2)}</div>
+      </div>`;
+    }).join('');
+
+    return `<div class="corr-stat-row">
+      <div class="corr-stat-header">${metric.label} <span style="font-size:10px;color:var(--muted);font-weight:400">(${filtered.length} settimane)</span></div>
+      ${itemsHtml}
+    </div>`;
+  }).filter(Boolean).join('');
+
+  el.innerHTML = html || '<div class="corr-empty">Dati insufficienti per calcolare le correlazioni.</div>';
+
+  // Legenda
+  if (html) {
+    el.insertAdjacentHTML('beforeend', `
+      <div style="font-size:10px;color:var(--muted);margin-top:0.75rem;padding:0.75rem;background:var(--surface);border-radius:8px;border:0.5px solid var(--border)">
+        <strong>Come leggere:</strong> Il valore va da -1 a +1.
+        <span style="color:#5ab45a">Verde</span> = abitudine associata a metrica migliore.
+        <span style="color:#f55a5a">Rosso</span> = associata a metrica peggiore.
+        <span style="color:#6b7280">Grigio</span> = correlazione debole (&lt;0.3). Con più settimane i risultati diventano più affidabili.
+      </div>`);
+  }
 }
 
 // ===== LOGIN =====
