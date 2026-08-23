@@ -2027,8 +2027,8 @@ function goSection(name) {
   document.getElementById('section-' + name).classList.add('active');
   window.scrollTo(0, 0);
   if (name === 'running') setTimeout(() => { populateYearFilter(); applyFilters(); }, 60);
-  if (name === 'health') renderHealthSection();
-  if (name === 'abitudini') renderAbitudini();
+  if (name === 'health') setTimeout(() => renderHealthSection(), 60);
+  if (name === 'abitudini') setTimeout(() => renderAbitudini(), 60);
 }
 
 function goHome() {
@@ -2452,8 +2452,11 @@ function saveAbitudini() {
   localStorage.setItem(ABITUDINI_KEY, JSON.stringify(abitudiniEntries));
   renderAbitudini();
 
+  // Re-renderizza i grafici dopo un breve delay (canvas potrebbe non essere ancora visibile)
+  setTimeout(() => renderAbitudini(), 150);
+
   // Toast dopo il render
-  setTimeout(() => showToast('Checklist salvata ✓'), 100);
+  setTimeout(() => showToast('Checklist salvata ✓'), 200);
 
   // Sync Google Sheets via JSONP — usa params separati, non JSON inline
   showSyncStatus('Salvataggio su Sheets…', 'loading');
