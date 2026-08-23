@@ -2446,17 +2446,36 @@ function saveAbitudini() {
     note,
   };
 
-  // Rimuovi eventuale entry dello stesso giorno
+  // Salva in locale
   abitudiniEntries = abitudiniEntries.filter(e => e.date !== today);
   abitudiniEntries.push(entry);
   localStorage.setItem(ABITUDINI_KEY, JSON.stringify(abitudiniEntries));
   renderAbitudini();
-  showToast('Checklist salvata ✓');
 
-  // Sync Google Sheets via JSONP
+  // Toast dopo il render
+  setTimeout(() => showToast('Checklist salvata ✓'), 100);
+
+  // Sync Google Sheets via JSONP — usa params separati, non JSON inline
   showSyncStatus('Salvataggio su Sheets…', 'loading');
-  const datiStr = encodeURIComponent(JSON.stringify(dati));
-  fetchJSONP(`${SHEET_URL}?action=addAbitudini&id=${entry.id}&date=${entry.date}&dato=${datiStr}&aderenza=${entry.aderenza}&note=${encodeURIComponent(note)}`)
+  const params = new URLSearchParams({
+    action:    'addAbitudini',
+    id:        entry.id,
+    date:      entry.date,
+    no_cellulare: dati.no_cellulare ? '1' : '0',
+    luce_solare:  dati.luce_solare  ? '1' : '0',
+    meditazione:  dati.meditazione  ? '1' : '0',
+    allenamento:  dati.allenamento  ? '1' : '0',
+    idratazione:  dati.idratazione  ? '1' : '0',
+    alcol:        dati.alcol        ? '1' : '0',
+    caffeina:     dati.caffeina     ? '1' : '0',
+    schermi_off:  dati.schermi_off  ? '1' : '0',
+    lettura:      dati.lettura      ? '1' : '0',
+    magnesio:     dati.magnesio     ? '1' : '0',
+    cena:         dati.cena         ? '1' : '0',
+    aderenza:  entry.aderenza,
+    note:      note,
+  });
+  fetchJSONP(SHEET_URL + '?' + params.toString())
     .then(() => { showSyncStatus('Salvato su Sheets ✓', 'ok'); setTimeout(() => showSyncStatus('',''), 3000); })
     .catch(() => showSyncStatus('Salvato solo in locale', 'warn'));
 }
