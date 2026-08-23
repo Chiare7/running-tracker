@@ -2494,6 +2494,7 @@ function updateChecklistCounter() {
 }
 
 function renderAbitudini() {
+  try {
   const today = new Date().toISOString().slice(0,10);
   document.getElementById('ab-oggi-label').textContent = new Date().toLocaleDateString('it-IT',{weekday:'long', day:'numeric', month:'long'});
 
@@ -2590,6 +2591,7 @@ function renderAbitudini() {
 
   // Log storico
   renderAbLog(sorted);
+  } catch(err) { console.error('renderAbitudini error:', err); }
 }
 
 function buildAbChart(canvasId, latestId, labels, data, color, unit) {
